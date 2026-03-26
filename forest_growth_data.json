@@ -1,0 +1,116 @@
+[
+  {
+    "age": 10,
+    "diameter": 6.3,
+    "height": 5.4,
+    "count": 3000
+  },
+  {
+    "age": 15,
+    "diameter": 11.6,
+    "height": 8.4,
+    "count": 2848
+  },
+  {
+    "age": 20,
+    "diameter": 15.5,
+    "height": 11.0,
+    "count": 2630
+  },
+  {
+    "age": 25,
+    "diameter": 18.3,
+    "height": 13.5,
+    "count": 1841
+  },
+  {
+    "age": 30,
+    "diameter": 19.4,
+    "height": 15.4,
+    "count": 1747
+  },
+  {
+    "age": 35,
+    "diameter": 21.1,
+    "height": 17.4,
+    "count": 1223
+  },
+  {
+    "age": 40,
+    "diameter": 22.1,
+    "height": 18.8,
+    "count": 1190
+  },
+  {
+    "age": 45,
+    "diameter": 22.9,
+    "height": 20.1,
+    "count": 1159
+  },
+  {
+    "age": 50,
+    "diameter": 23.5,
+    "height": 21.2,
+    "count": 1132
+  },
+  {
+    "age": 55,
+    "diameter": 25.1,
+    "height": 22.5,
+    "count": 793
+  },
+  {
+    "age": 60,
+    "diameter": 25.8,
+    "height": 23.3,
+    "count": 784
+  },
+  {
+    "age": 65,
+    "diameter": 26.5,
+    "height": 24.0,
+    "count": 776
+  },
+  {
+    "age": 70,
+    "diameter": 27.0,
+    "height": 24.6,
+    "count": 769
+  },
+  {
+    "age": 75,
+    "diameter": 27.4,
+    "height": 25.2,
+    "count": 763
+  },
+  {
+    "age": 80,
+    "diameter": 27.7,
+    "height": 25.7,
+    "count": 758
+  },
+  {
+    "age": 85,
+    "diameter": 27.9,
+    "height": 26.1,
+    "count": 753
+  },
+  {
+    "age": 90,
+    "diameter": 28.1,
+    "height": 26.5,
+    "count": 748
+  },
+  {
+    "age": 95,
+    "diameter": 28.2,
+    "height": 26.9,
+    "count": 744
+  },
+  {
+    "age": 100,
+    "diameter": 28.2,
+    "height": 27.2,
+    "count": 744
+  }
+]

@@ -1,0 +1,110 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b93afa8e94d7aa14684b50c72287edab, type: 3}
+  m_Name: GrowthDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::WoodSimulator.GrowthDatabase
+  growthStages:
+  - age: 10
+    height: 5.4
+    diameter: 6.3
+    treeCount: 3000
+    modelName: Age10_SmallTree
+  - age: 15
+    height: 8.4
+    diameter: 11.6
+    treeCount: 2848
+    modelName: Age10_SmallTree
+  - age: 20
+    height: 11
+    diameter: 15.5
+    treeCount: 2630
+    modelName: Age25_YoungTree
+  - age: 25
+    height: 13.5
+    diameter: 18.3
+    treeCount: 1841
+    modelName: Age25_YoungTree
+  - age: 30
+    height: 15.4
+    diameter: 19.4
+    treeCount: 1747
+    modelName: Age25_YoungTree
+  - age: 35
+    height: 17.4
+    diameter: 21.1
+    treeCount: 1223
+    modelName: Age40_MediumTree
+  - age: 40
+    height: 18.8
+    diameter: 22.1
+    treeCount: 1190
+    modelName: Age40_MediumTree
+  - age: 45
+    height: 20.1
+    diameter: 22.9
+    treeCount: 1159
+    modelName: Age40_MediumTree
+  - age: 50
+    height: 21.2
+    diameter: 23.5
+    treeCount: 1132
+    modelName: Age55_MatureTree
+  - age: 55
+    height: 22.5
+    diameter: 25.1
+    treeCount: 793
+    modelName: Age55_MatureTree
+  - age: 60
+    height: 23.3
+    diameter: 25.8
+    treeCount: 784
+    modelName: Age55_MatureTree
+  - age: 65
+    height: 24
+    diameter: 26.5
+    treeCount: 776
+    modelName: Age55_MatureTree
+  - age: 70
+    height: 24.6
+    diameter: 27
+    treeCount: 769
+    modelName: Age75_OldTree
+  - age: 75
+    height: 25.2
+    diameter: 27.4
+    treeCount: 763
+    modelName: Age75_OldTree
+  - age: 80
+    height: 25.7
+    diameter: 27.7
+    treeCount: 758
+    modelName: Age75_OldTree
+  - age: 85
+    height: 26.1
+    diameter: 27.9
+    treeCount: 753
+    modelName: Age75_OldTree
+  - age: 90
+    height: 26.5
+    diameter: 28.1
+    treeCount: 748
+    modelName: Age100_AncientTree
+  - age: 95
+    height: 26.9
+    diameter: 28.2
+    treeCount: 744
+    modelName: Age100_AncientTree
+  - age: 100
+    height: 27.2
+    diameter: 28.2
+    treeCount: 744
+    modelName: Age100_AncientTree

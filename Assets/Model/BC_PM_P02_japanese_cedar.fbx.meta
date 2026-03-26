@@ -15,10 +15,10 @@ ModelImporter:
         name: BC_PM_P02_japanese_cedar_trunk_01
       second: {fileID: 2100000, guid: 3c5bd7bacda88c549a780198563a2828, type: 2}
   materials:
-    materialImportMode: 0
+    materialImportMode: 2
     materialName: 0
     materialSearch: 1
-    materialLocation: 1
+    materialLocation: 0
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
