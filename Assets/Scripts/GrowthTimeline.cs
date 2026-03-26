@@ -32,6 +32,9 @@ namespace WoodSimulator
         [Tooltip("本数表示テキスト")]
         public Text treeCountText;
 
+        [Tooltip("自動再生ボタン")]
+        public Button playButton;
+
         [Header("Playback Settings")]
         [Tooltip("自動再生速度（秒/ステップ）")]
         public float playbackSpeed = 1.0f;
@@ -181,6 +184,26 @@ namespace WoodSimulator
         {
             isPlaying = !isPlaying;
             playbackTimer = 0f;
+
+            // ボタンの色を変更
+            if (playButton != null)
+            {
+                UnityEngine.UI.Image buttonImage = playButton.GetComponent<UnityEngine.UI.Image>();
+                if (buttonImage != null)
+                {
+                    if (isPlaying)
+                    {
+                        // 再生中は赤色
+                        buttonImage.color = Color.red;
+                    }
+                    else
+                    {
+                        // 停止中は白色
+                        buttonImage.color = Color.white;
+                    }
+                }
+            }
+
             Debug.Log($"[GrowthTimeline] TogglePlayback: {(isPlaying ? "再生開始" : "再生停止")} (現在の林齢: {currentAge}年)");
         }
 

@@ -521,7 +521,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Play
+  m_Text: "\u81EA\u52D5\u518D\u751F"
 --- !u!222 &809100824
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -891,7 +891,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Reset
+  m_Text: "\u6700\u521D\u306B\u623B\u3059"
 --- !u!222 &1505301812
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -988,6 +988,7 @@ MonoBehaviour:
   heightText: {fileID: 1405427738}
   diameterText: {fileID: 1895884765}
   treeCountText: {fileID: 2143878668}
+  playButton: {fileID: 883129399}
   playbackSpeed: 1
   updateInterval: 1
 --- !u!114 &1604423734
@@ -1148,7 +1149,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Next
+  m_Text: "5\u5E74\u9032\u3080"
 --- !u!222 &1749956787
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -1717,7 +1718,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Prev
+  m_Text: "5\u5E74\u623B\u308B"
 --- !u!222 &1970076799
 CanvasRenderer:
   m_ObjectHideFlags: 0
