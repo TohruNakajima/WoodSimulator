@@ -4,16 +4,16 @@ ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
   externalObjects:
-    - first:
-        type: UnityEngine:Material
-        assembly: UnityEngine.CoreModule
-        name: BC_PM_P02_japanese_cedar_leaves_01
-      second: {fileID: 2100000, guid: 7ba241d57e4716a46a7da8708c1a2608, type: 2}
-    - first:
-        type: UnityEngine:Material
-        assembly: UnityEngine.CoreModule
-        name: BC_PM_P02_japanese_cedar_trunk_01
-      second: {fileID: 2100000, guid: 3c5bd7bacda88c549a780198563a2828, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BC_PM_P02_japanese_cedar_leaves_01
+    second: {fileID: 2100000, guid: 7ba241d57e4716a46a7da8708c1a2608, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: BC_PM_P02_japanese_cedar_trunk_01
+    second: {fileID: 2100000, guid: 3c5bd7bacda88c549a780198563a2828, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
