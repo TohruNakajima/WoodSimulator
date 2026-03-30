@@ -20,6 +20,7 @@ namespace WoodSimulator
 
         private Queue<GameObject> pool = new Queue<GameObject>();
         private List<GameObject> activeObjects = new List<GameObject>();
+        public List<GameObject> ActiveObjects => activeObjects;
 
         /// <summary>
         /// プール初期化

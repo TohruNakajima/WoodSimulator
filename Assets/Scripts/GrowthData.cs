@@ -25,7 +25,7 @@ namespace WoodSimulator
 
         [Header("Display Settings")]
         [Tooltip("使用するモデル名（Age10_SmallTree等）")]
-        public string modelName;
+        public string modelName=> DetermineModelName(age);
 
         public GrowthData(int age, float height, float diameter, int treeCount)
         {
@@ -33,7 +33,7 @@ namespace WoodSimulator
             this.height = height;
             this.diameter = diameter;
             this.treeCount = treeCount;
-            this.modelName = DetermineModelName(age);
+            //this.modelName = DetermineModelName(age);
         }
 
         /// <summary>
