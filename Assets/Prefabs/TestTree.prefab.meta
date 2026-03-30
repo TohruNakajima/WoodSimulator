@@ -1,6 +1,8 @@
 fileFormatVersion: 2
-guid: 9fc0d4010bbf28b4594072e72b8655ab
-DefaultImporter:
+guid: cbd826df1a569e54daf32a88eed10565
+labels:
+- The Visual Engine
+PrefabImporter:
   externalObjects: {}
   userData: 
   assetBundleName: 
