@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting.Antlr3.Runtime.Tree;
 using UnityEngine;
 
 namespace WoodSimulator
@@ -33,15 +34,15 @@ namespace WoodSimulator
         private TreePool treePool;
         private List<GameObject> currentTrees = new List<GameObject>();
 
-        // 6メッシュ名マッピング
+        // 6メッシュ名マッピング（2026-03-29修正: FBX内メッシュ名に対応）
         private readonly Dictionary<string, string> meshNameMap = new Dictionary<string, string>
         {
-            { "Age10_SmallTree", "Age10_SmallTree" },
-            { "Age25_YoungTree", "Age25_YoungTree" },
-            { "Age40_MediumTree", "Age40_MediumTree" },
-            { "Age55_MatureTree", "Age55_MatureTree" },
-            { "Age75_OldTree", "Age75_OldTree" },
-            { "Age100_AncientTree", "Age100_AncientTree" }
+            { "Age10_SmallTree", "BC_PM_P02_japanese_cedar_01" },
+            { "Age25_YoungTree", "BC_PM_P02_japanese_cedar_03" },
+            { "Age40_MediumTree", "BC_PM_P02_japanese_cedar_05" },
+            { "Age55_MatureTree", "BC_PM_P02_japanese_cedar_04" },
+            { "Age75_OldTree", "BC_PM_P02_japanese_cedar_06" },
+            { "Age100_AncientTree", "BC_PM_P02_japanese_cedar_02" }
         };
 
         private void Awake()
@@ -57,6 +58,8 @@ namespace WoodSimulator
             treePool.initialPoolSize = 500;
             treePool.Initialize();
         }
+        [SerializeField]
+        GrowthData currentData;
 
         /// <summary>
         /// 指定年齢で森林生成
@@ -79,15 +82,18 @@ namespace WoodSimulator
                     return;
                 }
             }
+            
 
             GenerateForest(data);
         }
+
 
         /// <summary>
         /// GrowthDataで森林生成
         /// </summary>
         public void GenerateForest(GrowthData data)
         {
+            this.currentData = data;
             // 初回のみ最大本数で配置（位置・向き固定）
             if (currentTrees.Count == 0)
             {
@@ -121,11 +127,27 @@ namespace WoodSimulator
             Debug.Log($"ForestGenerator: Showing {displayTreeCount}/{currentTrees.Count} trees (age: {data.age}, inverted from {data.treeCount})");
         }
 
+        
+        private void UpdateTreeModels()
+        {
+            foreach (var model in treePool.ActiveObjects)
+            {
+                SetActiveModel(model, this.currentData.modelName);
+            }
+        }
+
         /// <summary>
         /// 6メッシュから適切なモデルをアクティブ化
         /// </summary>
         private void SetActiveModel(GameObject tree, string modelName)
         {
+            // meshNameMapで変換（旧名→FBXメッシュ名）
+            string actualMeshName = modelName;
+            if (meshNameMap.ContainsKey(modelName))
+            {
+                actualMeshName = meshNameMap[modelName];
+            }
+
             // 全メッシュを無効化
             foreach (Transform child in tree.transform)
             {
@@ -133,14 +155,14 @@ namespace WoodSimulator
             }
 
             // 指定モデルのみアクティブ化
-            Transform targetMesh = tree.transform.Find(modelName);
+            Transform targetMesh = tree.transform.Find(actualMeshName);
             if (targetMesh != null)
             {
                 targetMesh.gameObject.SetActive(true);
             }
             else
             {
-                Debug.LogWarning($"ForestGenerator: Model '{modelName}' not found in tree prefab. Available: {GetChildNames(tree)}");
+                Debug.LogWarning($"ForestGenerator: Model '{actualMeshName}' (from '{modelName}') not found in tree prefab. Available: {GetChildNames(tree)}");
                 // フォールバック: 最初の子をアクティブ化
                 if (tree.transform.childCount > 0)
                 {
