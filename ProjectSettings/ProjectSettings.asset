@@ -756,7 +756,8 @@ PlayerSettings:
   webGLCloseOnQuit: 0
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
-  scriptingDefineSymbols: {}
+  scriptingDefineSymbols:
+    Standalone: THE_VISUAL_ENGINE;THE_VISUAL_ENGINE_V21;THE_VISUAL_ENGINE_STANDARD
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:
@@ -854,7 +855,7 @@ PlayerSettings:
   qnxGraphicConfPath: 
   apiCompatibilityLevel: 6
   captureStartupLogs: {}
-  activeInputHandler: 0
+  activeInputHandler: 2
   windowsGamepadBackendHint: 0
   cloudProjectId: 70ef3f42-c4b7-47e7-b99c-465771f361e1
   framebufferDepthMemorylessMode: 0
