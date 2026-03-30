@@ -1165,7 +1165,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WoodSimulator.ForestGenerator
   growthDatabase: {fileID: 11400000, guid: 76f00286cbad2a546835c998b03058d7, type: 2}
-  treePrefab: {fileID: 0}
+  treePrefab: {fileID: 2913807323033663958, guid: 3337b20f30a5c834d8f9ad5b98941096, type: 3}
   forestCenter: {x: 0, y: 0, z: 0}
   forestSize: {x: 50, y: 50}
   treeCountScale: 0.1
