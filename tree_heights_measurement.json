@@ -1,0 +1,26 @@
+{
+  "Age10_Tree": {
+    "mesh_path": "SingleTreeSimulator/TreeContainer/Age10_Tree/BC_PM_P02_japanese_cedar_01",
+    "transform": "Component: Transform (on 'BC_PM_P02_japanese_cedar_01')\r\n  Properties (4):\r\n    m_LocalRotation (Quaternion) = (270.00, 239.50, 0.00)\r\n    m_LocalPosition (Vector3) = (0.00, 0.00, 0.00)\r\n    m_LocalScale (Vector3) = (1.20, 1.20, 1.20)\r\n    m_ConstrainProportionsScale (Boolean) = False\r\n"
+  },
+  "Age25_Tree": {
+    "mesh_path": "SingleTreeSimulator/TreeContainer/Age25_Tree/BC_PM_P02_japanese_cedar_03",
+    "transform": "Component: Transform (on 'BC_PM_P02_japanese_cedar_03')\r\n  Properties (4):\r\n    m_LocalRotation (Quaternion) = (270.00, 239.50, 0.00)\r\n    m_LocalPosition (Vector3) = (0.00, 0.00, 0.00)\r\n    m_LocalScale (Vector3) = (1.20, 1.20, 1.20)\r\n    m_ConstrainProportionsScale (Boolean) = False\r\n"
+  },
+  "Age40_Tree": {
+    "mesh_path": "SingleTreeSimulator/TreeContainer/Age40_Tree/BC_PM_P02_japanese_cedar_05",
+    "transform": "Component: Transform (on 'BC_PM_P02_japanese_cedar_05')\r\n  Properties (4):\r\n    m_LocalRotation (Quaternion) = (270.00, 90.00, 0.00)\r\n    m_LocalPosition (Vector3) = (0.00, 0.00, 0.00)\r\n    m_LocalScale (Vector3) = (1.20, 1.20, 1.20)\r\n    m_ConstrainProportionsScale (Boolean) = False\r\n"
+  },
+  "Age55_Tree": {
+    "mesh_path": "SingleTreeSimulator/TreeContainer/Age55_Tree/BC_PM_P02_japanese_cedar_04",
+    "transform": "Component: Transform (on 'BC_PM_P02_japanese_cedar_04')\r\n  Properties (4):\r\n    m_LocalRotation (Quaternion) = (270.00, 90.00, 0.00)\r\n    m_LocalPosition (Vector3) = (0.00, 0.00, 0.00)\r\n    m_LocalScale (Vector3) = (1.20, 1.20, 1.20)\r\n    m_ConstrainProportionsScale (Boolean) = False\r\n"
+  },
+  "Age75_Tree": {
+    "mesh_path": "SingleTreeSimulator/TreeContainer/Age75_Tree/BC_PM_P02_japanese_cedar_06",
+    "transform": "Component: Transform (on 'BC_PM_P02_japanese_cedar_06')\r\n  Properties (4):\r\n    m_LocalRotation (Quaternion) = (270.00, 90.00, 0.00)\r\n    m_LocalPosition (Vector3) = (0.00, 0.00, 0.00)\r\n    m_LocalScale (Vector3) = (1.20, 1.20, 1.20)\r\n    m_ConstrainProportionsScale (Boolean) = False\r\n"
+  },
+  "Age100_Tree": {
+    "mesh_path": "SingleTreeSimulator/TreeContainer/Age100_Tree/BC_PM_P02_japanese_cedar_02",
+    "transform": "Component: Transform (on 'BC_PM_P02_japanese_cedar_02')\r\n  Properties (4):\r\n    m_LocalRotation (Quaternion) = (270.00, 90.00, 0.00)\r\n    m_LocalPosition (Vector3) = (0.00, 0.00, 0.00)\r\n    m_LocalScale (Vector3) = (1.20, 1.20, 1.20)\r\n    m_ConstrainProportionsScale (Boolean) = False\r\n"
+  }
+}

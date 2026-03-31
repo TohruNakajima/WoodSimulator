@@ -23,6 +23,7 @@ namespace WoodSimulator
 
         // モデル高さ標準化のための定数
         private const float NORMALIZED_BASE_HEIGHT = 4.464f; // 標準化後の基準高さ（元3.72m × Scale1.2）
+        private const float BASE_DIAMETER = 6.3f; // 基準直径（cm、林齢10年の直径）
 
         // 各モデルの標準化スケール係数（元の高さの違いを吸収）
         private readonly float[] modelNormalizationScales = new float[] {
@@ -196,11 +197,16 @@ namespace WoodSimulator
             // NORMALIZED_BASE_HEIGHT (4.464m) を data.height に変換
             float heightScale = data.height / NORMALIZED_BASE_HEIGHT;
 
-            // 最終スケール = 標準化スケール × 高さスケール
-            float finalScale = normalizationScale * heightScale;
+            // ステップ3: データの太さに合わせてスケーリング
+            // BASE_DIAMETER (6.3cm) を data.diameter に変換
+            float diameterScale = data.diameter / BASE_DIAMETER;
 
-            // XZ軸は標準化スケールのみ、Y軸は最終スケールを適用
-            tree.transform.localScale = new Vector3(normalizationScale, finalScale, normalizationScale);
+            // 最終スケール
+            float finalHeightScale = normalizationScale * heightScale;  // Y軸: 高さ
+            float finalDiameterScale = normalizationScale * diameterScale;  // XZ軸: 太さ
+
+            // Y軸は高さ、XZ軸は太さを適用
+            tree.transform.localScale = new Vector3(finalDiameterScale, finalHeightScale, finalDiameterScale);
         }
 
         /// <summary>
