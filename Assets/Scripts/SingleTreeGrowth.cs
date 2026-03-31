@@ -39,6 +39,7 @@ namespace WoodSimulator
         private int currentAge = 10;
         private int currentTreeIndex = 0;
         private Coroutine fadeCoroutine;
+        private Coroutine scaleCoroutine;
 
         private void Start()
         {
@@ -61,7 +62,7 @@ namespace WoodSimulator
                 treeObjects[i] = treeContainer.GetChild(i).gameObject;
             }
 
-            // 全ての木のAlphaを初期化（フェード処理のため）
+            // 全ての木を初期化：SetActive(true) + Alpha=0（透明状態で待機）
             InitializeTreeAlphas();
 
             // 初期状態（林齢10年）で木を表示
@@ -69,16 +70,19 @@ namespace WoodSimulator
         }
 
         /// <summary>
-        /// 全ての木のAlpha値を初期化
+        /// 全ての木の初期化：SetActive(true) + Alpha=0（透明状態）
         /// </summary>
         private void InitializeTreeAlphas()
         {
+            Debug.Log("[InitializeTreeAlphas] 全モデルをSetActive(true) + Alpha=0に初期化");
             foreach (var tree in treeObjects)
             {
                 if (tree == null) continue;
-                // 全ての木を一度Alpha=1に設定
-                SetTreeAlpha(tree, 1f);
+                // 全モデルをActive化して透明状態に
+                tree.SetActive(true);
+                SetTreeAlpha(tree, 0f);
             }
+            Debug.Log("[InitializeTreeAlphas] 初期化完了");
         }
 
         /// <summary>
@@ -131,9 +135,14 @@ namespace WoodSimulator
             }
             else
             {
-                Debug.Log($"[UpdateTree] 同じメッシュ: スケーリングのみ更新");
-                // 同じメッシュでスケーリングのみ更新
-                ApplyScaling(treeObjects[currentTreeIndex], data);
+                Debug.Log($"[UpdateTree] 同じメッシュ: スケーリングアニメーション開始");
+                // スケーリングアニメーション実行
+                if (scaleCoroutine != null)
+                {
+                    StopCoroutine(scaleCoroutine);
+                    Debug.Log($"[UpdateTree] 実行中のスケーリングアニメーションを停止");
+                }
+                scaleCoroutine = StartCoroutine(AnimateScaling(treeObjects[currentTreeIndex], data, crossFadeDuration));
             }
         }
 
@@ -151,7 +160,68 @@ namespace WoodSimulator
         }
 
         /// <summary>
-        /// クロスフェードで新しいメッシュに差し替え
+        /// スケーリングアニメーション（同一メッシュ内での成長）
+        /// </summary>
+        private IEnumerator AnimateScaling(GameObject tree, GrowthData data, float duration)
+        {
+            if (tree == null)
+            {
+                Debug.LogWarning("[AnimateScaling] tree is null");
+                scaleCoroutine = null;
+                yield break;
+            }
+
+            // 現在のスケール取得
+            Vector3 startScale = tree.transform.localScale;
+
+            // 目標スケール計算（ApplyScaling()と同じロジック）
+            int treeIndex = System.Array.IndexOf(treeObjects, tree);
+            if (treeIndex < 0 || treeIndex >= modelNormalizationScales.Length)
+            {
+                Debug.LogWarning($"[AnimateScaling] Invalid tree index");
+                scaleCoroutine = null;
+                yield break;
+            }
+
+            float normalizationScale = modelNormalizationScales[treeIndex];
+            float heightScale = data.height / NORMALIZED_BASE_HEIGHT;
+            float diameterScale = data.diameter / BASE_DIAMETER;
+
+            Vector3 targetScale = new Vector3(
+                normalizationScale * diameterScale,
+                normalizationScale * heightScale,
+                normalizationScale * diameterScale
+            );
+
+            Debug.Log($"[AnimateScaling開始] Tree={tree.name}, Duration={duration}秒, StartScale={startScale}, TargetScale={targetScale}");
+
+            // 補間アニメーション
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                tree.transform.localScale = Vector3.Lerp(startScale, targetScale, t);
+
+                // 10フレームごとにログ出力
+                if (Time.frameCount % 10 == 0)
+                {
+                    Debug.Log($"[AnimateScaling進行中] t={t:F3}, CurrentScale={tree.transform.localScale}, elapsed={elapsed:F3}秒");
+                }
+
+                yield return null;
+            }
+
+            // 最終値を確実に設定
+            tree.transform.localScale = targetScale;
+            Debug.Log($"[AnimateScaling完了] FinalScale={targetScale}");
+
+            scaleCoroutine = null;
+        }
+
+        /// <summary>
+        /// クロスフェードで新しいメッシュに差し替え（スケーリングアニメーション統合）
+        /// 全モデルは常にSetActive(true)なのでAlphaのみで制御
         /// </summary>
         private IEnumerator CrossFadeToNewMesh(int newTreeIndex, GrowthData data)
         {
@@ -160,19 +230,29 @@ namespace WoodSimulator
 
             Debug.Log($"[CrossFade開始] 旧TreeIndex={currentTreeIndex} → 新TreeIndex={newTreeIndex}");
 
-            // 新しい木を完全透明に設定してからActive化
-            SetTreeAlpha(newTree, 0f);
-            newTree.SetActive(true);
-            ApplyScaling(newTree, data);
-            Debug.Log($"[CrossFade] 新Tree SetActive(true), Alpha=0.0に設定完了");
+            // 旧Treeの現在スケールを取得
+            Vector3 oldStartScale = oldTree.transform.localScale;
 
-            // 1フレーム待機（SetActive直後の描画を確実にするため）
+            // 旧Treeの目標スケール計算（現在のデータに基づく）
+            GrowthData oldData = growthDatabase.GetDataByAge(currentAge);
+            Vector3 oldTargetScale = CalculateTargetScale(currentTreeIndex, oldData);
+
+            // 新Treeの目標スケール計算（既にSetActive(true)なのでスケールのみ設定）
+            Vector3 newTargetScale = CalculateTargetScale(newTreeIndex, data);
+            newTree.transform.localScale = newTargetScale;
+
+            // 新TreeはAlpha=0から開始（既に透明状態で待機中）
+            SetTreeAlpha(newTree, 0f);
+
+            Debug.Log($"[CrossFade] 新Tree Alpha=0.0, Scale={newTargetScale}に設定完了（既にSetActive=true）");
+
+            // 1フレーム待機
             yield return null;
 
             float elapsed = 0f;
-            Debug.Log($"[CrossFade] フェード開始: Duration={crossFadeDuration}秒");
+            Debug.Log($"[CrossFade] フェード+スケーリング開始: Duration={crossFadeDuration}秒");
 
-            // クロスフェード
+            // クロスフェード + スケーリングアニメーション
             while (elapsed < crossFadeDuration)
             {
                 elapsed += Time.deltaTime;
@@ -181,8 +261,11 @@ namespace WoodSimulator
                 if (oldTree != null)
                 {
                     SetTreeAlpha(oldTree, 1f - t); // 旧: 不透明→透明
+                    // 旧Treeも目標スケールに向けてアニメーション
+                    oldTree.transform.localScale = Vector3.Lerp(oldStartScale, oldTargetScale, t);
                 }
-                SetTreeAlpha(newTree, t); // 新: 透明→不透明
+
+                SetTreeAlpha(newTree, t); // 新: 透明→不透明（滑らかにフェードイン）
 
                 // 10フレームごとにログ出力
                 if (Time.frameCount % 10 == 0)
@@ -195,20 +278,42 @@ namespace WoodSimulator
 
             Debug.Log($"[CrossFade完了] フェード終了");
 
-            // フェード完了: 旧メッシュ非表示、α値を1に戻す
+            // フェード完了: 旧TreeをAlpha=0に戻す（SetActiveはそのまま）
             if (oldTree != null)
             {
-                oldTree.SetActive(false);
-                SetTreeAlpha(oldTree, 1f); // 次回表示のためにα値をリセット
-                Debug.Log($"[CrossFade] 旧Tree SetActive(false), Alpha=1.0にリセット");
+                SetTreeAlpha(oldTree, 0f); // 透明状態で待機
+                oldTree.transform.localScale = oldTargetScale; // 最終スケール確定
+                Debug.Log($"[CrossFade] 旧Tree Alpha=0.0, Scale={oldTargetScale}（透明状態で待機）");
             }
 
-            // 新メッシュを完全不透明に
+            // 新メッシュを完全不透明に、スケール確定
             SetTreeAlpha(newTree, 1f);
-            Debug.Log($"[CrossFade] 新Tree Alpha=1.0に設定完了");
+            newTree.transform.localScale = newTargetScale;
+            Debug.Log($"[CrossFade] 新Tree Alpha=1.0, Scale={newTargetScale}に設定完了");
 
             currentTreeIndex = newTreeIndex;
             fadeCoroutine = null;
+        }
+
+        /// <summary>
+        /// 目標スケール計算（共通ロジック）
+        /// </summary>
+        private Vector3 CalculateTargetScale(int treeIndex, GrowthData data)
+        {
+            if (treeIndex < 0 || treeIndex >= modelNormalizationScales.Length || data == null)
+            {
+                return Vector3.one;
+            }
+
+            float normalizationScale = modelNormalizationScales[treeIndex];
+            float heightScale = data.height / NORMALIZED_BASE_HEIGHT;
+            float diameterScale = data.diameter / BASE_DIAMETER;
+
+            return new Vector3(
+                normalizationScale * diameterScale,
+                normalizationScale * heightScale,
+                normalizationScale * diameterScale
+            );
         }
 
         /// <summary>
@@ -267,6 +372,8 @@ namespace WoodSimulator
                     materialCount++;
                     if (materials[i] != null)
                     {
+                        string shaderName = materials[i].shader.name;
+
                         // TVEシェーダーの場合
                         if (materials[i].HasProperty("_MainColor"))
                         {
@@ -287,6 +394,7 @@ namespace WoodSimulator
                                 materials[i].SetFloat("_LocalAlpha", alpha);
                             }
 
+                            Debug.Log($"[SetTreeAlpha] Mat={materials[i].name}, Shader={shaderName}, _MainColor.a={alpha:F3}");
                             changedCount++;
                         }
                         // 標準シェーダーの_Colorを変更（TVEシェーダーにはない）
@@ -295,7 +403,12 @@ namespace WoodSimulator
                             Color color = materials[i].GetColor("_Color");
                             color.a = alpha;
                             materials[i].SetColor("_Color", color);
+                            Debug.Log($"[SetTreeAlpha] Mat={materials[i].name}, Shader={shaderName}, _Color.a={alpha:F3}");
                             changedCount++;
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"[SetTreeAlpha] Mat={materials[i].name}, Shader={shaderName}, プロパティ_MainColorも_Colorもなし");
                         }
                     }
                 }

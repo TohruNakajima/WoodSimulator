@@ -561,7 +561,7 @@ Material:
     - _CullMode: 0
     - _CullModeForward: 0
     - _CullModeNormalFlip: 1
-    - _Cutoff: 0.376
+    - _Cutoff: 0.236
     - _CutoutAlphaValue: 0
     - _CutoutBakeMode: 0
     - _CutoutCategory: 1
@@ -830,7 +830,7 @@ Material:
     - _LocalLeaves: 1
     - _LocalSize: 1
     - _MainAlbedoValue: 1
-    - _MainAlphaClipValue: 0.376
+    - _MainAlphaClipValue: 0.236
     - _MainCat: 1
     - _MainCategory: 1
     - _MainColorMode: 0

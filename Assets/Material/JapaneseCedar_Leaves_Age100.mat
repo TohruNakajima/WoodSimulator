@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: JapaneseCedar_Leaves
+  m_Name: JapaneseCedar_Leaves_Age100
   m_Shader: {fileID: 4800000, guid: a933075b367f9b24981408633f72ff34, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -561,7 +561,7 @@ Material:
     - _CullMode: 0
     - _CullModeForward: 0
     - _CullModeNormalFlip: 1
-    - _Cutoff: 0.3
+    - _Cutoff: 1
     - _CutoutAlphaValue: 0
     - _CutoutBakeMode: 0
     - _CutoutCategory: 1
@@ -716,7 +716,7 @@ Material:
     - _FullDetailNormalBlendThreshold: 1
     - _FullDetailNormalBlendWidth: 0.05
     - _GlancingFadeValue: 0
-    - _GlobalAlpha: 0
+    - _GlobalAlpha: 1
     - _GlobalAtmoLayerValue: 0
     - _GlobalAtmoPivotValue: 0
     - _GlobalCat: 1
@@ -830,7 +830,7 @@ Material:
     - _LocalLeaves: 1
     - _LocalSize: 1
     - _MainAlbedoValue: 1
-    - _MainAlphaClipValue: 0.3
+    - _MainAlphaClipValue: 1
     - _MainCat: 1
     - _MainCategory: 1
     - _MainColorMode: 0

@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: JapaneseCedar_Leaves
+  m_Name: JapaneseCedar_Leaves_Age25
   m_Shader: {fileID: 4800000, guid: a933075b367f9b24981408633f72ff34, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -56,7 +56,7 @@ Material:
   m_LightmapFlags: 0
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 1
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: 2450
   stringTagMap:
     DisableBatching: true
     NatureRendererInstancing: true
@@ -561,7 +561,7 @@ Material:
     - _CullMode: 0
     - _CullModeForward: 0
     - _CullModeNormalFlip: 1
-    - _Cutoff: 0.3
+    - _Cutoff: 1
     - _CutoutAlphaValue: 0
     - _CutoutBakeMode: 0
     - _CutoutCategory: 1
@@ -667,7 +667,7 @@ Material:
     - _DrynessSmoothnessValue: 0.5
     - _DrynessSpace: 1
     - _DrynessSubsurfaceValue: 0.5
-    - _DstBlend: 10
+    - _DstBlend: 0
     - _EmissiveCat: 1
     - _EmissiveCategory: 1
     - _EmissiveColorMode: 1
@@ -716,7 +716,7 @@ Material:
     - _FullDetailNormalBlendThreshold: 1
     - _FullDetailNormalBlendWidth: 0.05
     - _GlancingFadeValue: 0
-    - _GlobalAlpha: 0
+    - _GlobalAlpha: 1
     - _GlobalAtmoLayerValue: 0
     - _GlobalAtmoPivotValue: 0
     - _GlobalCat: 1
@@ -830,7 +830,7 @@ Material:
     - _LocalLeaves: 1
     - _LocalSize: 1
     - _MainAlbedoValue: 1
-    - _MainAlphaClipValue: 0.3
+    - _MainAlphaClipValue: 1
     - _MainCat: 1
     - _MainCategory: 1
     - _MainColorMode: 0
@@ -1150,7 +1150,7 @@ Material:
     - _SpecularAAScreenSpaceVariance: 0.1
     - _SpecularAAThreshold: 0.2
     - _SpecularHighlights: 1
-    - _SrcBlend: 5
+    - _SrcBlend: 1
     - _StencilRef: 130
     - _StencilRefMV: 128
     - _StencilWriteMask: 135
@@ -1358,7 +1358,7 @@ Material:
     - _ZTestGBuffer: 3
     - _ZTestMode: 8
     - _ZTestModeDistortion: 8
-    - _ZWrite: 0
+    - _ZWrite: 1
     - __dirty: 1
     - _emissive_intensity_value: 1
     - _emissive_power_value: 0
