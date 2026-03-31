@@ -5,7 +5,7 @@ namespace WoodSimulator
 {
     /// <summary>
     /// 1本の杉成長シミュレーション
-    /// TreeContainer配下の6つのPrefabをSetActiveで切り替え、クロスフェード演出で自然な成長を表現
+    /// TreeContainer配下の6つのPrefabを全てSetActive(true)で常時有効化し、Alpha値制御で透明/不透明を切り替え、クロスフェード演出で自然な成長を表現
     /// </summary>
     public class SingleTreeGrowth : MonoBehaviour
     {
@@ -62,7 +62,7 @@ namespace WoodSimulator
                 treeObjects[i] = treeContainer.GetChild(i).gameObject;
             }
 
-            // 全ての木を初期化：SetActive(true) + Alpha=0（透明状態で待機）
+            // 全ての木を初期化：全てSetActive(true) + Alpha値制御（Age10のみ不透明、他は透明）
             InitializeTreeAlphas();
 
             // 初期状態（林齢10年）で木を表示
@@ -70,17 +70,18 @@ namespace WoodSimulator
         }
 
         /// <summary>
-        /// 全ての木の初期化：SetActive(true) + Alpha=0（透明状態）
+        /// 全ての木の初期化：全てSetActive(true)にしてAlpha値で制御（Age10のみAlpha=1で不透明、他はAlpha=0で透明）
         /// </summary>
         private void InitializeTreeAlphas()
         {
-            Debug.Log("[InitializeTreeAlphas] 全モデルをSetActive(true) + Alpha=0に初期化");
-            foreach (var tree in treeObjects)
+            Debug.Log("[InitializeTreeAlphas] 全モデルをSetActive(true) + Alpha値で透明/不透明制御");
+            for (int i = 0; i < treeObjects.Length; i++)
             {
-                if (tree == null) continue;
-                // 全モデルをActive化して透明状態に
-                tree.SetActive(true);
-                SetTreeAlpha(tree, 0f);
+                if (treeObjects[i] == null) continue;
+                // 全モデルをActive化
+                treeObjects[i].SetActive(true);
+                // Age10（インデックス0）のみAlpha=1（不透明）、他はAlpha=0（透明）
+                SetTreeAlpha(treeObjects[i], i == 0 ? 1f : 0f);
             }
             Debug.Log("[InitializeTreeAlphas] 初期化完了");
         }
@@ -99,7 +100,7 @@ namespace WoodSimulator
         }
 
         /// <summary>
-        /// 木の更新（SetActive切り替え + スケーリング）
+        /// 木の更新（Alpha値制御 + スケーリング）
         /// </summary>
         private void UpdateTree(int age)
         {
@@ -174,7 +175,7 @@ namespace WoodSimulator
             // 現在のスケール取得
             Vector3 startScale = tree.transform.localScale;
 
-            // 目標スケール計算（ApplyScaling()と同じロジック）
+            // 目標スケール計算（CalculateTargetScale()と同じロジック）
             int treeIndex = System.Array.IndexOf(treeObjects, tree);
             if (treeIndex < 0 || treeIndex >= modelNormalizationScales.Length)
             {
@@ -237,14 +238,15 @@ namespace WoodSimulator
             GrowthData oldData = growthDatabase.GetDataByAge(currentAge);
             Vector3 oldTargetScale = CalculateTargetScale(currentTreeIndex, oldData);
 
-            // 新Treeの目標スケール計算（既にSetActive(true)なのでスケールのみ設定）
+            // 新Treeの目標スケール計算
             Vector3 newTargetScale = CalculateTargetScale(newTreeIndex, data);
             newTree.transform.localScale = newTargetScale;
 
-            // 新TreeはAlpha=0から開始（既に透明状態で待機中）
+            // 新TreeをSetActive(true)にしてAlpha=0から開始（透明状態）
+            newTree.SetActive(true);
             SetTreeAlpha(newTree, 0f);
 
-            Debug.Log($"[CrossFade] 新Tree Alpha=0.0, Scale={newTargetScale}に設定完了（既にSetActive=true）");
+            Debug.Log($"[CrossFade] 新Tree SetActive(true) + Alpha=0.0, Scale={newTargetScale}に設定完了");
 
             // 1フレーム待機
             yield return null;
@@ -278,18 +280,18 @@ namespace WoodSimulator
 
             Debug.Log($"[CrossFade完了] フェード終了");
 
-            // フェード完了: 旧TreeをAlpha=0に戻す（SetActiveはそのまま）
+            // フェード完了: 旧TreeをAlpha=0に戻す（SetActive(true)のまま透明状態で待機）
             if (oldTree != null)
             {
                 SetTreeAlpha(oldTree, 0f); // 透明状態で待機
                 oldTree.transform.localScale = oldTargetScale; // 最終スケール確定
-                Debug.Log($"[CrossFade] 旧Tree Alpha=0.0, Scale={oldTargetScale}（透明状態で待機）");
+                Debug.Log($"[CrossFade] 旧Tree Alpha=0.0, Scale={oldTargetScale}（SetActive(true)のまま透明状態で待機）");
             }
 
             // 新メッシュを完全不透明に、スケール確定
             SetTreeAlpha(newTree, 1f);
             newTree.transform.localScale = newTargetScale;
-            Debug.Log($"[CrossFade] 新Tree Alpha=1.0, Scale={newTargetScale}に設定完了");
+            Debug.Log($"[CrossFade] 新Tree Alpha=1.0, Scale={newTargetScale}に設定完了（SetActive(true)のまま不透明）");
 
             currentTreeIndex = newTreeIndex;
             fadeCoroutine = null;
@@ -317,41 +319,6 @@ namespace WoodSimulator
         }
 
         /// <summary>
-        /// 木のスケーリング適用
-        /// </summary>
-        private void ApplyScaling(GameObject tree, GrowthData data)
-        {
-            if (tree == null)
-                return;
-
-            // 現在のTreeIndexを取得
-            int treeIndex = System.Array.IndexOf(treeObjects, tree);
-            if (treeIndex < 0 || treeIndex >= modelNormalizationScales.Length)
-            {
-                Debug.LogWarning($"SingleTreeGrowth: Invalid tree index for scaling");
-                return;
-            }
-
-            // ステップ1: モデルの標準化スケールを適用（全モデルを同じ基準高さに統一）
-            float normalizationScale = modelNormalizationScales[treeIndex];
-
-            // ステップ2: データの高さに合わせてスケーリング
-            // NORMALIZED_BASE_HEIGHT (4.464m) を data.height に変換
-            float heightScale = data.height / NORMALIZED_BASE_HEIGHT;
-
-            // ステップ3: データの太さに合わせてスケーリング
-            // BASE_DIAMETER (6.3cm) を data.diameter に変換
-            float diameterScale = data.diameter / BASE_DIAMETER;
-
-            // 最終スケール
-            float finalHeightScale = normalizationScale * heightScale;  // Y軸: 高さ
-            float finalDiameterScale = normalizationScale * diameterScale;  // XZ軸: 太さ
-
-            // Y軸は高さ、XZ軸は太さを適用
-            tree.transform.localScale = new Vector3(finalDiameterScale, finalHeightScale, finalDiameterScale);
-        }
-
-        /// <summary>
         /// 木の透明度設定（各モデルに専用マテリアルが割り当て済み）
         /// </summary>
         private void SetTreeAlpha(GameObject tree, float alpha)
@@ -374,30 +341,20 @@ namespace WoodSimulator
                     {
                         string shaderName = materials[i].shader.name;
 
-                        // TVEシェーダーの場合
-                        if (materials[i].HasProperty("_MainColor"))
+                        // 葉マテリアル（TVEシェーダー）の場合
+                        if (materials[i].HasProperty("_MainAlphaClipValue"))
                         {
-                            // _MainColorのAlpha値を変更
-                            Color mainColor = materials[i].GetColor("_MainColor");
-                            mainColor.a = alpha;
-                            materials[i].SetColor("_MainColor", mainColor);
+                            // 葉のAlpha値は逆: 0.236=不透明、1=透明
+                            // alpha=0→0.236（不透明）、alpha=1→1（透明）に変換
+                            float leafAlpha = Mathf.Lerp(0.236f, 1f, 1f - alpha);
+                            materials[i].SetFloat("_MainAlphaClipValue", leafAlpha);
+                            materials[i].SetFloat("_Cutoff", leafAlpha);
+                            materials[i].SetFloat("_GlobalAlpha", 1f - alpha);
 
-                            // TVEシェーダーの_GlobalAlphaを変更（0.0～1.0で透明度制御）
-                            if (materials[i].HasProperty("_GlobalAlpha"))
-                            {
-                                materials[i].SetFloat("_GlobalAlpha", alpha);
-                            }
-
-                            // TVEシェーダーの_LocalAlphaを変更（0.0～1.0で透明度制御）
-                            if (materials[i].HasProperty("_LocalAlpha"))
-                            {
-                                materials[i].SetFloat("_LocalAlpha", alpha);
-                            }
-
-                            Debug.Log($"[SetTreeAlpha] Mat={materials[i].name}, Shader={shaderName}, _MainColor.a={alpha:F3}");
+                            Debug.Log($"[SetTreeAlpha] Mat={materials[i].name}, Shader={shaderName}, alpha={alpha:F3}, _MainAlphaClipValue={leafAlpha:F3}");
                             changedCount++;
                         }
-                        // 標準シェーダーの_Colorを変更（TVEシェーダーにはない）
+                        // 幹マテリアル（Standardシェーダー）の場合
                         else if (materials[i].HasProperty("_Color"))
                         {
                             Color color = materials[i].GetColor("_Color");
@@ -408,7 +365,7 @@ namespace WoodSimulator
                         }
                         else
                         {
-                            Debug.LogWarning($"[SetTreeAlpha] Mat={materials[i].name}, Shader={shaderName}, プロパティ_MainColorも_Colorもなし");
+                            Debug.LogWarning($"[SetTreeAlpha] Mat={materials[i].name}, Shader={shaderName}, プロパティが見つかりません");
                         }
                     }
                 }
