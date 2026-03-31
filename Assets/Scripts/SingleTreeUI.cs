@@ -1,10 +1,11 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace WoodSimulator
 {
     /// <summary>
-    /// 1本の杉成長シミュレーションUI制御
+    /// 1本の杉成長シミュレーションUI制御（ボタン操作版）
     /// </summary>
     public class SingleTreeUI : MonoBehaviour
     {
@@ -15,10 +16,20 @@ namespace WoodSimulator
         [Tooltip("SingleTreeGrowth")]
         public SingleTreeGrowth singleTreeGrowth;
 
-        [Header("UI Components")]
-        [Tooltip("林齢スライダー")]
-        public Slider ageSlider;
+        [Header("UI Components - Buttons")]
+        [Tooltip("自動進行/停止ボタン")]
+        public Button autoPlayButton;
 
+        [Tooltip("1段階進めるボタン")]
+        public Button nextButton;
+
+        [Tooltip("1段階戻すボタン")]
+        public Button prevButton;
+
+        [Tooltip("リセットボタン")]
+        public Button resetButton;
+
+        [Header("UI Components - Text")]
         [Tooltip("林齢表示テキスト")]
         public Text ageText;
 
@@ -28,7 +39,16 @@ namespace WoodSimulator
         [Tooltip("直径表示テキスト")]
         public Text diameterText;
 
+        [Tooltip("自動進行ボタンのテキスト")]
+        public Text autoPlayButtonText;
+
+        [Header("Auto Play Settings")]
+        [Tooltip("自動進行の間隔（秒）")]
+        public float autoPlayInterval = 2.0f;
+
         private int currentAge = 10;
+        private bool isAutoPlaying = false;
+        private Coroutine autoPlayCoroutine;
 
         private void Start()
         {
@@ -44,40 +64,130 @@ namespace WoodSimulator
                 return;
             }
 
-            // Slider設定
-            if (ageSlider != null)
-            {
-                var (min, max) = growthDatabase.GetAgeRange();
-                ageSlider.minValue = min;
-                ageSlider.maxValue = max;
-                ageSlider.wholeNumbers = true;
-                ageSlider.value = min;
-                ageSlider.onValueChanged.AddListener(OnSliderValueChanged);
-            }
+            // ボタンイベント登録
+            if (autoPlayButton != null)
+                autoPlayButton.onClick.AddListener(OnAutoPlayButtonClick);
+
+            if (nextButton != null)
+                nextButton.onClick.AddListener(OnNextButtonClick);
+
+            if (prevButton != null)
+                prevButton.onClick.AddListener(OnPrevButtonClick);
+
+            if (resetButton != null)
+                resetButton.onClick.AddListener(OnResetButtonClick);
 
             // 初期表示
             currentAge = 10;
             UpdateUI(currentAge);
             singleTreeGrowth.SetAge(currentAge);
+            UpdateAutoPlayButtonText();
         }
 
         /// <summary>
-        /// スライダー値変更時
+        /// 自動進行/停止ボタンクリック
         /// </summary>
-        private void OnSliderValueChanged(float value)
+        private void OnAutoPlayButtonClick()
         {
-            int age = Mathf.RoundToInt(value);
+            if (isAutoPlaying)
+            {
+                StopAutoPlay();
+            }
+            else
+            {
+                StartAutoPlay();
+            }
+        }
 
-            // 5年刻みにステップ制御
-            age = Mathf.RoundToInt(age / 5f) * 5;
-            age = Mathf.Clamp(age, 10, 100);
+        /// <summary>
+        /// 1段階進めるボタンクリック
+        /// </summary>
+        private void OnNextButtonClick()
+        {
+            StopAutoPlay();
+            ChangeAge(currentAge + 5);
+        }
 
-            if (age == currentAge)
+        /// <summary>
+        /// 1段階戻すボタンクリック
+        /// </summary>
+        private void OnPrevButtonClick()
+        {
+            StopAutoPlay();
+            ChangeAge(currentAge - 5);
+        }
+
+        /// <summary>
+        /// リセットボタンクリック
+        /// </summary>
+        private void OnResetButtonClick()
+        {
+            StopAutoPlay();
+            ChangeAge(10);
+        }
+
+        /// <summary>
+        /// 自動進行開始
+        /// </summary>
+        private void StartAutoPlay()
+        {
+            if (isAutoPlaying)
                 return;
 
-            currentAge = age;
-            UpdateUI(age);
-            singleTreeGrowth.SetAge(age);
+            isAutoPlaying = true;
+            autoPlayCoroutine = StartCoroutine(AutoPlayCoroutine());
+            UpdateAutoPlayButtonText();
+        }
+
+        /// <summary>
+        /// 自動進行停止
+        /// </summary>
+        private void StopAutoPlay()
+        {
+            if (!isAutoPlaying)
+                return;
+
+            isAutoPlaying = false;
+            if (autoPlayCoroutine != null)
+            {
+                StopCoroutine(autoPlayCoroutine);
+                autoPlayCoroutine = null;
+            }
+            UpdateAutoPlayButtonText();
+        }
+
+        /// <summary>
+        /// 自動進行コルーチン
+        /// </summary>
+        private IEnumerator AutoPlayCoroutine()
+        {
+            while (isAutoPlaying)
+            {
+                yield return new WaitForSeconds(autoPlayInterval);
+
+                int nextAge = currentAge + 5;
+                if (nextAge > 100)
+                {
+                    nextAge = 10; // ループ
+                }
+
+                ChangeAge(nextAge);
+            }
+        }
+
+        /// <summary>
+        /// 年齢変更
+        /// </summary>
+        private void ChangeAge(int newAge)
+        {
+            newAge = Mathf.Clamp(newAge, 10, 100);
+
+            if (newAge == currentAge)
+                return;
+
+            currentAge = newAge;
+            UpdateUI(newAge);
+            singleTreeGrowth.SetAge(newAge);
         }
 
         /// <summary>
@@ -105,6 +215,22 @@ namespace WoodSimulator
 
             if (diameterText != null)
                 diameterText.text = $"直径: {data.diameter:F1}cm";
+        }
+
+        /// <summary>
+        /// 自動進行ボタンのテキスト更新
+        /// </summary>
+        private void UpdateAutoPlayButtonText()
+        {
+            if (autoPlayButtonText != null)
+            {
+                autoPlayButtonText.text = isAutoPlaying ? "停止" : "自動進行";
+            }
+        }
+
+        private void OnDestroy()
+        {
+            StopAutoPlay();
         }
     }
 }

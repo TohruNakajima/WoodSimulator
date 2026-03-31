@@ -1,0 +1,67 @@
+{
+  "base_height": 3.72,
+  "current_scale": 1.2,
+  "normalized_base_height": 4.464,
+  "models": [
+    {
+      "tree": "Age10_Tree",
+      "cedar": "cedar_01",
+      "original_height": 3.72,
+      "current_scale": 1.2,
+      "current_height": 4.464,
+      "normalization_scale": 1.0,
+      "final_scale": 1.2,
+      "normalized_height": 4.464
+    },
+    {
+      "tree": "Age25_Tree",
+      "cedar": "cedar_03",
+      "original_height": 3.8,
+      "current_scale": 1.2,
+      "current_height": 4.56,
+      "normalization_scale": 0.9789473684210527,
+      "final_scale": 1.174736842105263,
+      "normalized_height": 4.464
+    },
+    {
+      "tree": "Age40_Tree",
+      "cedar": "cedar_05",
+      "original_height": 3.9,
+      "current_scale": 1.2,
+      "current_height": 4.68,
+      "normalization_scale": 0.9538461538461539,
+      "final_scale": 1.1446153846153846,
+      "normalized_height": 4.464
+    },
+    {
+      "tree": "Age55_Tree",
+      "cedar": "cedar_04",
+      "original_height": 3.97,
+      "current_scale": 1.2,
+      "current_height": 4.764,
+      "normalization_scale": 0.9370277078085643,
+      "final_scale": 1.124433249370277,
+      "normalized_height": 4.464
+    },
+    {
+      "tree": "Age75_Tree",
+      "cedar": "cedar_06",
+      "original_height": 4.36,
+      "current_scale": 1.2,
+      "current_height": 5.232,
+      "normalization_scale": 0.8532110091743119,
+      "final_scale": 1.0238532110091743,
+      "normalized_height": 4.464
+    },
+    {
+      "tree": "Age100_Tree",
+      "cedar": "cedar_02",
+      "original_height": 4.75,
+      "current_scale": 1.2,
+      "current_height": 5.7,
+      "normalization_scale": 0.7831578947368422,
+      "final_scale": 0.9397894736842105,
+      "normalized_height": 4.464
+    }
+  ]
+}

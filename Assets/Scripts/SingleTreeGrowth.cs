@@ -21,6 +21,19 @@ namespace WoodSimulator
         [Tooltip("クロスフェード時間（秒）")]
         public float crossFadeDuration = 1.0f;
 
+        // モデル高さ標準化のための定数
+        private const float NORMALIZED_BASE_HEIGHT = 4.464f; // 標準化後の基準高さ（元3.72m × Scale1.2）
+
+        // 各モデルの標準化スケール係数（元の高さの違いを吸収）
+        private readonly float[] modelNormalizationScales = new float[] {
+            1.0000f,  // Age10_Tree (cedar_01: 3.72m)
+            0.9789f,  // Age25_Tree (cedar_03: 3.80m)
+            0.9538f,  // Age40_Tree (cedar_05: 3.90m)
+            0.9370f,  // Age55_Tree (cedar_04: 3.97m)
+            0.8532f,  // Age75_Tree (cedar_06: 4.36m)
+            0.7832f,  // Age100_Tree (cedar_02: 4.75m)
+        };
+
         private GameObject[] treeObjects = new GameObject[6];
         private int currentAge = 10;
         private int currentTreeIndex = 0;
@@ -168,24 +181,26 @@ namespace WoodSimulator
             if (tree == null)
                 return;
 
-            // ベースメッシュの高さを取得（Bounds使用）
-            Renderer renderer = tree.GetComponentInChildren<Renderer>();
-            if (renderer == null)
+            // 現在のTreeIndexを取得
+            int treeIndex = System.Array.IndexOf(treeObjects, tree);
+            if (treeIndex < 0 || treeIndex >= modelNormalizationScales.Length)
             {
-                Debug.LogWarning("SingleTreeGrowth: No renderer found in tree");
+                Debug.LogWarning($"SingleTreeGrowth: Invalid tree index for scaling");
                 return;
             }
 
-            float baseHeight = renderer.bounds.size.y;
-            if (baseHeight <= 0)
-            {
-                Debug.LogWarning($"SingleTreeGrowth: Invalid base height: {baseHeight}");
-                return;
-            }
+            // ステップ1: モデルの標準化スケールを適用（全モデルを同じ基準高さに統一）
+            float normalizationScale = modelNormalizationScales[treeIndex];
 
-            // 目標高さに合わせてY軸スケーリング
-            float scaleRatio = data.height / baseHeight;
-            tree.transform.localScale = new Vector3(1f, scaleRatio, 1f);
+            // ステップ2: データの高さに合わせてスケーリング
+            // NORMALIZED_BASE_HEIGHT (4.464m) を data.height に変換
+            float heightScale = data.height / NORMALIZED_BASE_HEIGHT;
+
+            // 最終スケール = 標準化スケール × 高さスケール
+            float finalScale = normalizationScale * heightScale;
+
+            // XZ軸は標準化スケールのみ、Y軸は最終スケールを適用
+            tree.transform.localScale = new Vector3(normalizationScale, finalScale, normalizationScale);
         }
 
         /// <summary>
