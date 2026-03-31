@@ -5,7 +5,7 @@ namespace WoodSimulator
 {
     /// <summary>
     /// 1本の杉成長シミュレーション
-    /// 6つのPrefabを段階的に差し替え、クロスフェード演出で自然な成長を表現
+    /// TreeContainer配下の6つのPrefabをSetActiveで切り替え、クロスフェード演出で自然な成長を表現
     /// </summary>
     public class SingleTreeGrowth : MonoBehaviour
     {
@@ -13,36 +13,41 @@ namespace WoodSimulator
         [Tooltip("成長データベース")]
         public GrowthDatabase growthDatabase;
 
-        [Header("Tree Prefabs (Size Order)")]
-        [Tooltip("Age10_Tree (BC_PM_P02_japanese_cedar_01, 3.72m)")]
-        public GameObject age10Prefab;
-
-        [Tooltip("Age25_Tree (BC_PM_P02_japanese_cedar_03, 3.80m)")]
-        public GameObject age25Prefab;
-
-        [Tooltip("Age40_Tree (BC_PM_P02_japanese_cedar_05, 3.90m)")]
-        public GameObject age40Prefab;
-
-        [Tooltip("Age55_Tree (BC_PM_P02_japanese_cedar_04, 3.97m)")]
-        public GameObject age55Prefab;
-
-        [Tooltip("Age75_Tree (BC_PM_P02_japanese_cedar_06, 4.36m)")]
-        public GameObject age75Prefab;
-
-        [Tooltip("Age100_Tree (BC_PM_P02_japanese_cedar_02, 4.75m)")]
-        public GameObject age100Prefab;
+        [Header("Tree Container")]
+        [Tooltip("6段階すべてのPrefabを含むコンテナ")]
+        public Transform treeContainer;
 
         [Header("Growth Settings")]
         [Tooltip("クロスフェード時間（秒）")]
         public float crossFadeDuration = 1.0f;
 
-        private GameObject currentTree;
+        private GameObject[] treeObjects = new GameObject[6];
         private int currentAge = 10;
+        private int currentTreeIndex = 0;
         private Coroutine fadeCoroutine;
 
         private void Start()
         {
-            // 初期状態（林齢10年）で木を生成
+            // TreeContainer配下の6つのGameObjectを取得
+            if (treeContainer == null)
+            {
+                Debug.LogError("SingleTreeGrowth: treeContainer is null");
+                return;
+            }
+
+            if (treeContainer.childCount != 6)
+            {
+                Debug.LogError($"SingleTreeGrowth: treeContainer should have 6 children, but has {treeContainer.childCount}");
+                return;
+            }
+
+            // Age10_Tree, Age25_Tree, Age40_Tree, Age55_Tree, Age75_Tree, Age100_Treeの順に取得
+            for (int i = 0; i < 6; i++)
+            {
+                treeObjects[i] = treeContainer.GetChild(i).gameObject;
+            }
+
+            // 初期状態（林齢10年）で木を表示
             SetAge(10);
         }
 
@@ -59,7 +64,7 @@ namespace WoodSimulator
         }
 
         /// <summary>
-        /// 木の更新（メッシュ差し替え + スケーリング）
+        /// 木の更新（SetActive切り替え + スケーリング）
         /// </summary>
         private void UpdateTree(int age)
         {
@@ -75,16 +80,11 @@ namespace WoodSimulator
                 return;
             }
 
-            // 適切なPrefabを選択
-            GameObject targetPrefab = SelectPrefabByAge(age);
-            if (targetPrefab == null)
-            {
-                Debug.LogError($"SingleTreeGrowth: No prefab found for age {age}");
-                return;
-            }
+            // 適切なTreeIndexを選択
+            int targetTreeIndex = SelectTreeIndexByAge(age);
 
             // メッシュ切り替えが必要か確認
-            bool needsMeshChange = ShouldChangeMesh(age);
+            bool needsMeshChange = (targetTreeIndex != currentTreeIndex);
 
             if (needsMeshChange)
             {
@@ -93,58 +93,43 @@ namespace WoodSimulator
                 {
                     StopCoroutine(fadeCoroutine);
                 }
-                fadeCoroutine = StartCoroutine(CrossFadeToNewMesh(targetPrefab, data));
+                fadeCoroutine = StartCoroutine(CrossFadeToNewMesh(targetTreeIndex, data));
             }
             else
             {
                 // 同じメッシュでスケーリングのみ更新
-                ApplyScaling(currentTree, data);
+                ApplyScaling(treeObjects[currentTreeIndex], data);
             }
         }
 
         /// <summary>
-        /// 林齢に応じたPrefab選択
+        /// 林齢に応じたTreeIndex選択（0=Age10, 1=Age25, 2=Age40, 3=Age55, 4=Age75, 5=Age100）
         /// </summary>
-        private GameObject SelectPrefabByAge(int age)
+        private int SelectTreeIndexByAge(int age)
         {
-            if (age <= 17) return age10Prefab;
-            if (age <= 32) return age25Prefab;
-            if (age <= 47) return age40Prefab;
-            if (age <= 67) return age55Prefab;
-            if (age <= 87) return age75Prefab;
-            return age100Prefab;
-        }
-
-        /// <summary>
-        /// メッシュ変更が必要か判定
-        /// </summary>
-        private bool ShouldChangeMesh(int age)
-        {
-            if (currentTree == null)
-                return true;
-
-            GameObject targetPrefab = SelectPrefabByAge(age);
-
-            // 現在のメッシュ名と目標Prefab名を比較
-            string currentMeshName = currentTree.name.Replace("(Clone)", "").Trim();
-            string targetPrefabName = targetPrefab.name;
-
-            return currentMeshName != targetPrefabName;
+            if (age <= 17) return 0; // Age10_Tree
+            if (age <= 32) return 1; // Age25_Tree
+            if (age <= 47) return 2; // Age40_Tree
+            if (age <= 67) return 3; // Age55_Tree
+            if (age <= 87) return 4; // Age75_Tree
+            return 5; // Age100_Tree
         }
 
         /// <summary>
         /// クロスフェードで新しいメッシュに差し替え
         /// </summary>
-        private IEnumerator CrossFadeToNewMesh(GameObject newPrefab, GrowthData data)
+        private IEnumerator CrossFadeToNewMesh(int newTreeIndex, GrowthData data)
         {
-            // 新しい木をインスタンス化（同じ座標）
-            GameObject newTree = Instantiate(newPrefab, transform.position, Quaternion.identity, transform);
+            GameObject oldTree = treeObjects[currentTreeIndex];
+            GameObject newTree = treeObjects[newTreeIndex];
+
+            // 新しい木をActive化
+            newTree.SetActive(true);
             ApplyScaling(newTree, data);
 
             // 新しい木を完全透明で開始
             SetTreeAlpha(newTree, 0f);
 
-            GameObject oldTree = currentTree;
             float elapsed = 0f;
 
             // クロスフェード
@@ -162,15 +147,16 @@ namespace WoodSimulator
                 yield return null;
             }
 
-            // フェード完了: 旧メッシュ削除
+            // フェード完了: 旧メッシュ非表示、α値を1に戻す
             if (oldTree != null)
             {
-                Destroy(oldTree);
+                oldTree.SetActive(false);
+                SetTreeAlpha(oldTree, 1f); // 次回表示のためにα値をリセット
             }
 
             // 新メッシュを完全不透明に
             SetTreeAlpha(newTree, 1f);
-            currentTree = newTree;
+            currentTreeIndex = newTreeIndex;
             fadeCoroutine = null;
         }
 
@@ -237,11 +223,6 @@ namespace WoodSimulator
             if (fadeCoroutine != null)
             {
                 StopCoroutine(fadeCoroutine);
-            }
-
-            if (currentTree != null)
-            {
-                Destroy(currentTree);
             }
         }
     }

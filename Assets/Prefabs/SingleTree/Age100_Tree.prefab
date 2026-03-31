@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 797450681679946251}
   - component: {fileID: 5033334342255818898}
   m_Layer: 0
-  m_Name: BC_PM_P02_japanese_cedar_06
+  m_Name: BC_PM_P02_japanese_cedar_02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -40,7 +40,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3505632068979623652}
-  m_Mesh: {fileID: 576669396039187399, guid: a1f54737fd751ec4193432300cb416bf, type: 3}
+  m_Mesh: {fileID: -7134173710914429704, guid: a1f54737fd751ec4193432300cb416bf, type: 3}
 --- !u!23 &5033334342255818898
 MeshRenderer:
   m_ObjectHideFlags: 0
