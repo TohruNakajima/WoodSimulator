@@ -167,7 +167,7 @@ Material:
     - _CategoryRender: 1
     - _Cull: 2
     - _CullMode: 2
-    - _Cutoff: 0.5
+    - _Cutoff: 0.514
     - _CutoutAlphaValue: 0
     - _CutoutBakeMode: 0
     - _CutoutCategory: 0
@@ -274,7 +274,7 @@ Material:
     - _IsTVEShader: 1
     - _IsVersion: 2150
     - _MainAlbedoValue: 1
-    - _MainAlphaClipValue: 0.5
+    - _MainAlphaClipValue: 0.514
     - _MainCategory: 1
     - _MainColorMode: 0
     - _MainCoordMode: 0

@@ -61,8 +61,24 @@ namespace WoodSimulator
                 treeObjects[i] = treeContainer.GetChild(i).gameObject;
             }
 
+            // 全ての木のAlphaを初期化（フェード処理のため）
+            InitializeTreeAlphas();
+
             // 初期状態（林齢10年）で木を表示
             SetAge(10);
+        }
+
+        /// <summary>
+        /// 全ての木のAlpha値を初期化
+        /// </summary>
+        private void InitializeTreeAlphas()
+        {
+            foreach (var tree in treeObjects)
+            {
+                if (tree == null) continue;
+                // 全ての木を一度Alpha=1に設定
+                SetTreeAlpha(tree, 1f);
+            }
         }
 
         /// <summary>
@@ -73,6 +89,7 @@ namespace WoodSimulator
             if (age == currentAge)
                 return;
 
+            Debug.Log($"[SetAge] 林齢変更: {currentAge}年 → {age}年");
             currentAge = age;
             UpdateTree(age);
         }
@@ -96,21 +113,25 @@ namespace WoodSimulator
 
             // 適切なTreeIndexを選択
             int targetTreeIndex = SelectTreeIndexByAge(age);
+            Debug.Log($"[UpdateTree] Age={age}年 → TargetTreeIndex={targetTreeIndex}");
 
             // メッシュ切り替えが必要か確認
             bool needsMeshChange = (targetTreeIndex != currentTreeIndex);
 
             if (needsMeshChange)
             {
+                Debug.Log($"[UpdateTree] メッシュ切り替え必要: CurrentIndex={currentTreeIndex} → TargetIndex={targetTreeIndex}");
                 // クロスフェードでメッシュ差し替え
                 if (fadeCoroutine != null)
                 {
                     StopCoroutine(fadeCoroutine);
+                    Debug.Log($"[UpdateTree] 実行中のフェードを停止");
                 }
                 fadeCoroutine = StartCoroutine(CrossFadeToNewMesh(targetTreeIndex, data));
             }
             else
             {
+                Debug.Log($"[UpdateTree] 同じメッシュ: スケーリングのみ更新");
                 // 同じメッシュでスケーリングのみ更新
                 ApplyScaling(treeObjects[currentTreeIndex], data);
             }
@@ -137,14 +158,19 @@ namespace WoodSimulator
             GameObject oldTree = treeObjects[currentTreeIndex];
             GameObject newTree = treeObjects[newTreeIndex];
 
-            // 新しい木をActive化
+            Debug.Log($"[CrossFade開始] 旧TreeIndex={currentTreeIndex} → 新TreeIndex={newTreeIndex}");
+
+            // 新しい木を完全透明に設定してからActive化
+            SetTreeAlpha(newTree, 0f);
             newTree.SetActive(true);
             ApplyScaling(newTree, data);
+            Debug.Log($"[CrossFade] 新Tree SetActive(true), Alpha=0.0に設定完了");
 
-            // 新しい木を完全透明で開始
-            SetTreeAlpha(newTree, 0f);
+            // 1フレーム待機（SetActive直後の描画を確実にするため）
+            yield return null;
 
             float elapsed = 0f;
+            Debug.Log($"[CrossFade] フェード開始: Duration={crossFadeDuration}秒");
 
             // クロスフェード
             while (elapsed < crossFadeDuration)
@@ -158,18 +184,29 @@ namespace WoodSimulator
                 }
                 SetTreeAlpha(newTree, t); // 新: 透明→不透明
 
+                // 10フレームごとにログ出力
+                if (Time.frameCount % 10 == 0)
+                {
+                    Debug.Log($"[CrossFade進行中] t={t:F3}, 旧Alpha={1f - t:F3}, 新Alpha={t:F3}, elapsed={elapsed:F3}秒");
+                }
+
                 yield return null;
             }
+
+            Debug.Log($"[CrossFade完了] フェード終了");
 
             // フェード完了: 旧メッシュ非表示、α値を1に戻す
             if (oldTree != null)
             {
                 oldTree.SetActive(false);
                 SetTreeAlpha(oldTree, 1f); // 次回表示のためにα値をリセット
+                Debug.Log($"[CrossFade] 旧Tree SetActive(false), Alpha=1.0にリセット");
             }
 
             // 新メッシュを完全不透明に
             SetTreeAlpha(newTree, 1f);
+            Debug.Log($"[CrossFade] 新Tree Alpha=1.0に設定完了");
+
             currentTreeIndex = newTreeIndex;
             fadeCoroutine = null;
         }
@@ -210,7 +247,7 @@ namespace WoodSimulator
         }
 
         /// <summary>
-        /// 木の透明度設定
+        /// 木の透明度設定（各モデルに専用マテリアルが割り当て済み）
         /// </summary>
         private void SetTreeAlpha(GameObject tree, float alpha)
         {
@@ -218,25 +255,55 @@ namespace WoodSimulator
                 return;
 
             Renderer[] renderers = tree.GetComponentsInChildren<Renderer>();
+            int materialCount = 0;
+            int changedCount = 0;
+
             foreach (var renderer in renderers)
             {
-                foreach (var mat in renderer.materials)
+                // renderer.materialsでインスタンスマテリアルを取得（アセット変更を防ぐ）
+                Material[] materials = renderer.materials;
+                for (int i = 0; i < materials.Length; i++)
                 {
-                    // Transparentモードに変更
-                    mat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                    mat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                    mat.SetInt("_ZWrite", 0);
-                    mat.DisableKeyword("_ALPHATEST_ON");
-                    mat.EnableKeyword("_ALPHABLEND_ON");
-                    mat.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                    mat.renderQueue = 3000;
+                    materialCount++;
+                    if (materials[i] != null)
+                    {
+                        // TVEシェーダーの場合
+                        if (materials[i].HasProperty("_MainColor"))
+                        {
+                            // _MainColorのAlpha値を変更
+                            Color mainColor = materials[i].GetColor("_MainColor");
+                            mainColor.a = alpha;
+                            materials[i].SetColor("_MainColor", mainColor);
 
-                    // alpha値設定
-                    Color color = mat.color;
-                    color.a = alpha;
-                    mat.color = color;
+                            // TVEシェーダーの_GlobalAlphaを変更（0.0～1.0で透明度制御）
+                            if (materials[i].HasProperty("_GlobalAlpha"))
+                            {
+                                materials[i].SetFloat("_GlobalAlpha", alpha);
+                            }
+
+                            // TVEシェーダーの_LocalAlphaを変更（0.0～1.0で透明度制御）
+                            if (materials[i].HasProperty("_LocalAlpha"))
+                            {
+                                materials[i].SetFloat("_LocalAlpha", alpha);
+                            }
+
+                            changedCount++;
+                        }
+                        // 標準シェーダーの_Colorを変更（TVEシェーダーにはない）
+                        else if (materials[i].HasProperty("_Color"))
+                        {
+                            Color color = materials[i].GetColor("_Color");
+                            color.a = alpha;
+                            materials[i].SetColor("_Color", color);
+                            changedCount++;
+                        }
+                    }
                 }
+                // 変更したマテリアル配列をRendererに再設定
+                renderer.materials = materials;
             }
+
+            Debug.Log($"[SetTreeAlpha] Tree={tree.name}, Alpha={alpha:F3}, マテリアル数={materialCount}, 変更数={changedCount}");
         }
 
         private void OnDestroy()
