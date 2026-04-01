@@ -22,18 +22,8 @@ namespace WoodSimulator
         public float crossFadeDuration = 1.0f;
 
         // モデル高さ標準化のための定数
-        private const float NORMALIZED_BASE_HEIGHT = 4.464f; // 標準化後の基準高さ（元3.72m × Scale1.2）
+        private const float MODEL_BASE_HEIGHT = 4.0f; // 全モデル統一後の基準高さ（m）
         private const float BASE_DIAMETER = 6.3f; // 基準直径（cm、林齢10年の直径）
-
-        // 各モデルの標準化スケール係数（元の高さの違いを吸収）
-        private readonly float[] modelNormalizationScales = new float[] {
-            1.0000f,  // Age10_Tree (cedar_01: 3.72m)
-            0.9789f,  // Age25_Tree (cedar_03: 3.80m)
-            0.9538f,  // Age40_Tree (cedar_05: 3.90m)
-            0.9370f,  // Age55_Tree (cedar_04: 3.97m)
-            0.8532f,  // Age75_Tree (cedar_06: 4.36m)
-            0.7832f,  // Age100_Tree (cedar_02: 4.75m)
-        };
 
         private GameObject[] treeObjects = new GameObject[6];
         private int currentAge = 10;
@@ -176,22 +166,13 @@ namespace WoodSimulator
             Vector3 startScale = tree.transform.localScale;
 
             // 目標スケール計算（CalculateTargetScale()と同じロジック）
-            int treeIndex = System.Array.IndexOf(treeObjects, tree);
-            if (treeIndex < 0 || treeIndex >= modelNormalizationScales.Length)
-            {
-                Debug.LogWarning($"[AnimateScaling] Invalid tree index");
-                scaleCoroutine = null;
-                yield break;
-            }
-
-            float normalizationScale = modelNormalizationScales[treeIndex];
-            float heightScale = data.height / NORMALIZED_BASE_HEIGHT;
+            float heightScale = data.height / MODEL_BASE_HEIGHT; // 統一された基準高さで割る
             float diameterScale = data.diameter / BASE_DIAMETER;
 
             Vector3 targetScale = new Vector3(
-                normalizationScale * diameterScale,
-                normalizationScale * heightScale,
-                normalizationScale * diameterScale
+                diameterScale,
+                heightScale,
+                diameterScale
             );
 
             Debug.Log($"[AnimateScaling開始] Tree={tree.name}, Duration={duration}秒, StartScale={startScale}, TargetScale={targetScale}");
@@ -302,19 +283,18 @@ namespace WoodSimulator
         /// </summary>
         private Vector3 CalculateTargetScale(int treeIndex, GrowthData data)
         {
-            if (treeIndex < 0 || treeIndex >= modelNormalizationScales.Length || data == null)
+            if (data == null)
             {
                 return Vector3.one;
             }
 
-            float normalizationScale = modelNormalizationScales[treeIndex];
-            float heightScale = data.height / NORMALIZED_BASE_HEIGHT;
+            float heightScale = data.height / MODEL_BASE_HEIGHT; // 統一された基準高さで割る
             float diameterScale = data.diameter / BASE_DIAMETER;
 
             return new Vector3(
-                normalizationScale * diameterScale,
-                normalizationScale * heightScale,
-                normalizationScale * diameterScale
+                diameterScale,
+                heightScale,
+                diameterScale
             );
         }
 
