@@ -142,12 +142,12 @@ namespace WoodSimulator
         /// </summary>
         private int SelectTreeIndexByAge(int age)
         {
-            if (age <= 17) return 0; // Age10_Tree
-            if (age <= 32) return 1; // Age25_Tree
-            if (age <= 47) return 2; // Age40_Tree
-            if (age <= 67) return 3; // Age55_Tree
-            if (age <= 87) return 4; // Age75_Tree
-            return 5; // Age100_Tree
+            if (age < 20) return 0; // Age10_Tree (10-19年)
+            if (age < 40) return 1; // Age25_Tree (20-39年)
+            if (age < 55) return 2; // Age40_Tree (40-54年)
+            if (age < 75) return 3; // Age55_Tree (55-74年)
+            if (age < 100) return 4; // Age75_Tree (75-99年)
+            return 5; // Age100_Tree (100年)
         }
 
         /// <summary>
