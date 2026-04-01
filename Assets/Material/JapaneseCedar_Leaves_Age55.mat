@@ -56,7 +56,7 @@ Material:
   m_LightmapFlags: 0
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 1
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: 2450
   stringTagMap:
     DisableBatching: true
     NatureRendererInstancing: true
@@ -667,7 +667,7 @@ Material:
     - _DrynessSmoothnessValue: 0.5
     - _DrynessSpace: 1
     - _DrynessSubsurfaceValue: 0.5
-    - _DstBlend: 10
+    - _DstBlend: 0
     - _EmissiveCat: 1
     - _EmissiveCategory: 1
     - _EmissiveColorMode: 1
@@ -1150,7 +1150,7 @@ Material:
     - _SpecularAAScreenSpaceVariance: 0.1
     - _SpecularAAThreshold: 0.2
     - _SpecularHighlights: 1
-    - _SrcBlend: 5
+    - _SrcBlend: 1
     - _StencilRef: 130
     - _StencilRefMV: 128
     - _StencilWriteMask: 135
@@ -1358,7 +1358,7 @@ Material:
     - _ZTestGBuffer: 3
     - _ZTestMode: 8
     - _ZTestModeDistortion: 8
-    - _ZWrite: 0
+    - _ZWrite: 1
     - __dirty: 1
     - _emissive_intensity_value: 1
     - _emissive_power_value: 0
