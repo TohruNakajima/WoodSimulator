@@ -13,8 +13,8 @@ namespace WoodSimulator
         [Tooltip("成長データベース")]
         public GrowthDatabase growthDatabase;
 
-        [Tooltip("SingleTreeGrowth")]
-        public SingleTreeGrowth singleTreeGrowth;
+        [Tooltip("ForestManager（森林全体の制御）")]
+        public ForestManager forestManager;
 
         [Header("UI Components - Buttons")]
         [Tooltip("自動進行/停止ボタン")]
@@ -58,9 +58,9 @@ namespace WoodSimulator
                 return;
             }
 
-            if (singleTreeGrowth == null)
+            if (forestManager == null)
             {
-                Debug.LogError("SingleTreeUI: singleTreeGrowth is not assigned.");
+                Debug.LogError("SingleTreeUI: forestManager is not assigned.");
                 return;
             }
 
@@ -80,7 +80,7 @@ namespace WoodSimulator
             // 初期表示
             currentAge = 10;
             UpdateUI(currentAge);
-            singleTreeGrowth.SetAge(currentAge);
+            forestManager.SetAge(currentAge);
             UpdateAutoPlayButtonText();
         }
 
@@ -187,7 +187,7 @@ namespace WoodSimulator
 
             currentAge = newAge;
             UpdateUI(newAge);
-            singleTreeGrowth.SetAge(newAge);
+            forestManager.SetAge(newAge);
         }
 
         /// <summary>

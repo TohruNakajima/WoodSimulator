@@ -21,6 +21,10 @@ namespace WoodSimulator
         [Tooltip("クロスフェード時間（秒）")]
         public float crossFadeDuration = 1.0f;
 
+        [Header("Forest Settings")]
+        [Tooltip("森林内でのインデックス（0～299、本数制御に使用）")]
+        public int treeIndex = 0;
+
         // モデル高さ標準化のための定数
         private const float MODEL_BASE_HEIGHT = 4.0f; // 全モデル統一後の基準高さ（m）
         private const float BASE_DIAMETER = 6.3f; // 基準直径（cm、林齢10年の直径）
@@ -30,6 +34,72 @@ namespace WoodSimulator
         private int currentTreeIndex = 0;
         private Coroutine fadeCoroutine;
         private Coroutine scaleCoroutine;
+
+        private void OnEnable()
+        {
+            ForestManager.OnAgeChanged += HandleAgeChanged;
+        }
+
+        private void OnDisable()
+        {
+            ForestManager.OnAgeChanged -= HandleAgeChanged;
+        }
+
+        private void HandleAgeChanged(int age, int treeCount)
+        {
+            // 本数制御: treeCountに応じて表示/非表示を決定
+            // 300本中でtreeCount相当を表示（例: 3000本→全表示、744本→74本表示）
+            int visibleCount = Mathf.RoundToInt(300f * treeCount / 3000f);
+            bool shouldBeVisible = treeIndex < visibleCount;
+
+            Debug.Log($"[HandleAgeChanged] {gameObject.name}: Age={age}, TreeCount={treeCount}, VisibleCount={visibleCount}, TreeIndex={treeIndex}, ShouldBeVisible={shouldBeVisible}, CurrentActive={gameObject.activeSelf}");
+
+            if (!shouldBeVisible && gameObject.activeSelf)
+            {
+                // 非表示にする場合はFadeOut
+                Debug.Log($"[HandleAgeChanged] {gameObject.name}: FadeOutAndDisable開始");
+                StartCoroutine(FadeOutAndDisable());
+            }
+            else if (shouldBeVisible && !gameObject.activeSelf)
+            {
+                // 再表示する場合はFadeIn
+                Debug.Log($"[HandleAgeChanged] {gameObject.name}: 再表示（SetActive(true) + SetAge）");
+                gameObject.SetActive(true);
+                SetAge(age);
+            }
+            else if (shouldBeVisible && gameObject.activeSelf)
+            {
+                // 既に表示中の場合は年齢のみ更新
+                Debug.Log($"[HandleAgeChanged] {gameObject.name}: 年齢のみ更新（SetAge）");
+                SetAge(age);
+            }
+            else
+            {
+                Debug.Log($"[HandleAgeChanged] {gameObject.name}: 何もしない（非表示のまま）");
+            }
+        }
+
+        private IEnumerator FadeOutAndDisable()
+        {
+            // 現在表示中の木をFadeOut
+            GameObject currentTree = treeObjects[currentTreeIndex];
+            float elapsed = 0f;
+            float duration = crossFadeDuration;
+
+            Debug.Log($"[FadeOutAndDisable] {gameObject.name}: 開始 Duration={duration}秒");
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = 1f - (elapsed / duration);
+                SetTreeAlpha(currentTree, t);
+                yield return null;
+            }
+
+            SetTreeAlpha(currentTree, 0f);
+            gameObject.SetActive(false);
+            Debug.Log($"[FadeOutAndDisable] {gameObject.name}: 完了（SetActive(false)）");
+        }
 
         private void Start()
         {
