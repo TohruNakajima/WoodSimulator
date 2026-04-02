@@ -257,71 +257,75 @@ namespace SmartCreator.ProceduralTrees
             return mesh;
         }
 
+        // Generate random branch placement data shared between branches and leaves
+        struct BranchPlacement
+        {
+            public float heightNorm;  // 0..1 normalized height on trunk
+            public float yawAngle;    // 0..360 random angle around trunk
+            public float pitchAngle;  // downward angle
+            public float rollAngle;   // slight roll
+            public float lengthScale; // multiplier for branch length
+        }
+
+        BranchPlacement[] GenerateBranchPlacements()
+        {
+            int totalBranches = whorlCount * branchesPerWhorl;
+            var placements = new BranchPlacement[totalBranches];
+            Random.InitState(seed);
+
+            for (int i = 0; i < totalBranches; i++)
+            {
+                float heightNorm = Mathf.Lerp(branchStartHeight, branchEndHeight, Random.Range(0f, 1f));
+                float yaw = Random.Range(0f, 360f);
+                float basePitch = Mathf.Lerp(branchDownwardAngle + 15f, branchDownwardAngle - 25f, heightNorm);
+                float pitch = basePitch + Random.Range(-branchRandomTilt, branchRandomTilt);
+                float roll = Random.Range(-branchUpCurve * 10f, branchUpCurve * 10f);
+                float lenScale = Random.Range(0.7f, 1.3f);
+
+                placements[i] = new BranchPlacement
+                {
+                    heightNorm = heightNorm,
+                    yawAngle = yaw,
+                    pitchAngle = pitch,
+                    rollAngle = roll,
+                    lengthScale = lenScale
+                };
+            }
+            return placements;
+        }
+
         Mesh BuildAllBranchesMesh(bool forBake)
         {
             if (branchesPerWhorl < 1 || whorlCount < 2 || branchEndHeight <= branchStartHeight)
                 return DummySafeMesh("AllBranches");
 
-            int whorlStart = Mathf.RoundToInt(branchStartHeight * (whorlCount - 1));
-            int whorlEnd = Mathf.RoundToInt(branchEndHeight * (whorlCount - 1));
-            whorlEnd = Mathf.Clamp(whorlEnd, whorlStart + 1, whorlCount - 1);
-
+            var placements = GenerateBranchPlacements();
             List<CombineInstance> branchMeshes = new List<CombineInstance>();
             int skipped = 0;
-            for (int w = whorlStart; w <= whorlEnd; w++)
+
+            for (int i = 0; i < placements.Length; i++)
             {
-                float whorlNorm = Mathf.Clamp01(w / (float)(whorlCount - 1));
-                float safeNorm = Mathf.Min(whorlNorm, 0.99f);
-                float branchLen = Mathf.Max(0.2f, Mathf.Lerp(baseBranchLength, tipBranchLength, safeNorm));
-                float branchAng = Mathf.Lerp(branchDownwardAngle + 9, branchDownwardAngle - 20, safeNorm);
-                float whorlRadius = Mathf.Max(0.02f, Mathf.Lerp(trunkRadius * 1.4f, trunkTipRadius * 2.3f, safeNorm));
-                float angleOffset = (w % 2 == 0) ? 0f : 360f / branchesPerWhorl * 0.5f;
+                var bp = placements[i];
+                float safeNorm = Mathf.Min(bp.heightNorm, 0.99f);
+                float y = safeNorm * trunkHeight;
+                float branchLen = Mathf.Max(0.2f, Mathf.Lerp(baseBranchLength, tipBranchLength, safeNorm) * bp.lengthScale);
+                float trunkRad = Mathf.Max(0.02f, Mathf.Lerp(trunkRadius * 1.4f, trunkTipRadius * 2.3f, safeNorm));
 
-                for (int b = 0; b < branchesPerWhorl; b++)
+                Quaternion rot = SanitizeQuat(Quaternion.Euler(bp.pitchAngle, bp.yawAngle, bp.rollAngle));
+                Vector3 pos = SanitizeVec(new Vector3(0, y, 0) + rot * (Vector3.right * trunkRad));
+                float thisBranchDownwardCurve = Mathf.Lerp(branchDownwardCurve, branchDownwardCurve * 0.28f, safeNorm);
+                float thisThickness = Mathf.Lerp(branchThickness, branchThickness * 0.5f, safeNorm);
+                Mesh branchMesh = BuildProceduralBranchMesh(branchLen, thisBranchDownwardCurve, thisThickness);
+
+                if (!IsMeshFinite(branchMesh))
                 {
-                    float ang = angleOffset + (360f / branchesPerWhorl) * b + Mathf.Clamp(Random.Range(-branchRandomTilt, branchRandomTilt), -360f, 360f);
-                    ang = Mathf.Clamp(ang, -10000f, 10000f);
-                    Quaternion rot = SanitizeQuat(Quaternion.Euler(branchAng, ang, branchUpCurve * Mathf.Lerp(-1f, 1f, b / (float)(branchesPerWhorl - 1))));
-                    Vector3 pos = SanitizeVec(new Vector3(0, w * whorlSpacing, 0) + rot * (Vector3.right * whorlRadius));
-                    float thisBranchDownwardCurve = Mathf.Lerp(branchDownwardCurve, branchDownwardCurve * 0.28f, safeNorm);
-                    Mesh branchMesh = BuildProceduralBranchMesh(branchLen, thisBranchDownwardCurve, branchThickness);
-
-                    if (!IsMeshFinite(branchMesh))
-                    {
-                        skipped++;
-                        continue;
-                    }
-                    CombineInstance ciBranch = new CombineInstance();
-                    ciBranch.mesh = branchMesh;
-                    ciBranch.transform = Matrix4x4.TRS(pos, rot, Vector3.one);
-                    branchMeshes.Add(ciBranch);
+                    skipped++;
+                    continue;
                 }
-            }
-
-            // Add tip whorl
-            if (branchEndHeight >= 0.99f || forBake)
-            {
-                float y = trunkHeight + trunkTipRadius * 0.7f;
-                float whorlRadius = trunkTipRadius * 2.1f;
-                float branchLen = Mathf.Max(0.2f, tipBranchLength * 0.85f);
-
-                for (int b = 0; b < branchesPerWhorl; b++)
-                {
-                    float ang = (360f / branchesPerWhorl) * b;
-                    Quaternion rot = SanitizeQuat(Quaternion.Euler(branchDownwardAngle - 22f, ang, 0));
-                    Vector3 pos = SanitizeVec(new Vector3(0, y, 0) + rot * (Vector3.right * whorlRadius));
-                    Mesh branchMesh = BuildProceduralBranchMesh(branchLen, branchDownwardCurve * 0.65f, branchThickness * 0.9f);
-
-                    if (!IsMeshFinite(branchMesh))
-                    {
-                        skipped++;
-                        continue;
-                    }
-                    CombineInstance ciBranch = new CombineInstance();
-                    ciBranch.mesh = branchMesh;
-                    ciBranch.transform = Matrix4x4.TRS(pos, rot, Vector3.one);
-                    branchMeshes.Add(ciBranch);
-                }
+                CombineInstance ciBranch = new CombineInstance();
+                ciBranch.mesh = branchMesh;
+                ciBranch.transform = Matrix4x4.TRS(pos, rot, Vector3.one);
+                branchMeshes.Add(ciBranch);
             }
 
             if (branchMeshes.Count == 0)
@@ -340,85 +344,44 @@ namespace SmartCreator.ProceduralTrees
 
         Mesh BuildAllLeavesMesh(bool forBake)
         {
+            var placements = GenerateBranchPlacements();
             List<CombineInstance> leafInstances = new List<CombineInstance>();
-            int whorlStart = Mathf.RoundToInt(branchStartHeight * (whorlCount - 1));
-            int whorlEnd = Mathf.RoundToInt(branchEndHeight * (whorlCount - 1));
-            whorlEnd = Mathf.Clamp(whorlEnd, whorlStart + 1, whorlCount - 1);
 
-            for (int w = whorlStart; w <= whorlEnd; w++)
+            // Use a separate seed offset for leaf randomness
+            Random.InitState(seed + 9999);
+
+            for (int i = 0; i < placements.Length; i++)
             {
-                float whorlNorm = Mathf.Clamp01(w / (float)(whorlCount - 1));
-                float safeNorm = Mathf.Min(whorlNorm, 0.99f);
+                var bp = placements[i];
+                float safeNorm = Mathf.Min(bp.heightNorm, 0.99f);
                 float y = safeNorm * trunkHeight * 0.98f;
-                float branchLen = Mathf.Max(0.2f, Mathf.Lerp(baseBranchLength, tipBranchLength, safeNorm));
-                float branchAng = Mathf.Lerp(branchDownwardAngle + 9, branchDownwardAngle - 20, safeNorm);
-                float whorlRadius = Mathf.Max(0.02f, Mathf.Lerp(trunkRadius * 1.4f, trunkTipRadius * 2.3f, safeNorm));
-                float angleOffset = (w % 2 == 0) ? 0f : 360f / branchesPerWhorl * 0.5f;
+                float branchLen = Mathf.Max(0.2f, Mathf.Lerp(baseBranchLength, tipBranchLength, safeNorm) * bp.lengthScale);
+                float trunkRad = Mathf.Max(0.02f, Mathf.Lerp(trunkRadius * 1.4f, trunkTipRadius * 2.3f, safeNorm));
 
-                for (int b = 0; b < branchesPerWhorl; b++)
+                Quaternion rot = SanitizeQuat(Quaternion.Euler(bp.pitchAngle, bp.yawAngle, bp.rollAngle));
+                Vector3 pos = SanitizeVec(new Vector3(0, y, 0) + rot * (Vector3.right * trunkRad));
+
+                int leavesPerBranch = Mathf.RoundToInt(Mathf.Lerp(baseLeavesPerBranch * 1.2f, baseLeavesPerBranch * 0.45f, safeNorm));
+                if (leavesPerBranch <= 0) continue;
+
+                for (int lf = 0; lf < leavesPerBranch; lf++)
                 {
-                    float ang = angleOffset + (360f / branchesPerWhorl) * b + Mathf.Clamp(Random.Range(-branchRandomTilt, branchRandomTilt), -360f, 360f);
-                    ang = Mathf.Clamp(ang, -10000f, 10000f);
-                    Quaternion rot = SanitizeQuat(Quaternion.Euler(branchAng, ang, branchUpCurve * Mathf.Lerp(-1f, 1f, b / (float)(branchesPerWhorl - 1))));
-                    Vector3 pos = SanitizeVec(new Vector3(0, y, 0) + rot * (Vector3.right * whorlRadius));
+                    float frac = lf / (float)leavesPerBranch;
+                    float lpos = branchLen * (0.14f + 0.75f * frac);
+                    float yOffset = Random.Range(-0.04f, 0.04f) * branchLen;
+                    float rand = Random.Range(-0.13f, 0.13f) * branchLen;
+                    float tilt = Random.Range(-leafBend, leafBend);
+                    float leafRotY = Random.Range(-80f, 80f);
 
-                    int leavesPerBranch = Mathf.RoundToInt(Mathf.Lerp(baseLeavesPerBranch * 1.2f, baseLeavesPerBranch * 0.45f, safeNorm));
-                    if (leavesPerBranch <= 0) continue;
-                    for (int lf = 0; lf < leavesPerBranch; lf++)
-                    {
-                        float frac = lf / (float)leavesPerBranch;
-                        float lpos = branchLen * (0.14f + 0.75f * frac);
-                        float yOffset = Random.Range(-0.04f, 0.04f) * branchLen;
-                        float rand = Random.Range(-0.13f, 0.13f) * branchLen;
-                        float tilt = Random.Range(-leafBend, leafBend);
-                        float leafRotY = Random.Range(-80f, 80f);
+                    Vector3 leafLocal = SanitizeVec(new Vector3(lpos + rand, yOffset, 0));
+                    Quaternion leafRot = SanitizeQuat(Quaternion.Euler(tilt, leafRotY, 0));
+                    Mesh leafMesh = BuildLeafCardMesh();
 
-                        Vector3 leafLocal = SanitizeVec(new Vector3(lpos + rand, yOffset, 0));
-                        Quaternion leafRot = SanitizeQuat(Quaternion.Euler(tilt, leafRotY, 0));
-                        Mesh leafMesh = BuildLeafCardMesh();
-
-                        if (!IsMeshFinite(leafMesh)) continue;
-                        CombineInstance ciLeaf = new CombineInstance();
-                        ciLeaf.mesh = leafMesh;
-                        ciLeaf.transform = Matrix4x4.TRS(pos, rot, Vector3.one) * Matrix4x4.TRS(leafLocal, leafRot, Vector3.one);
-                        leafInstances.Add(ciLeaf);
-                    }
-                }
-            }
-
-            // Add tip whorl
-            if (branchEndHeight >= 0.99f || forBake)
-            {
-                float y = trunkHeight + trunkTipRadius * 0.7f;
-                float whorlRadius = trunkTipRadius * 2.1f;
-                float branchLen = Mathf.Max(0.2f, tipBranchLength * 0.85f);
-
-                int leavesPerBranch = Mathf.RoundToInt(baseLeavesPerBranch * 0.42f);
-                for (int b = 0; b < branchesPerWhorl; b++)
-                {
-                    float ang = (360f / branchesPerWhorl) * b;
-                    Quaternion rot = SanitizeQuat(Quaternion.Euler(branchDownwardAngle - 22f, ang, 0));
-                    Vector3 pos = SanitizeVec(new Vector3(0, y, 0) + rot * (Vector3.right * whorlRadius));
-
-                    for (int lf = 0; lf < leavesPerBranch; lf++)
-                    {
-                        float frac = lf / (float)leavesPerBranch;
-                        float lpos = branchLen * (0.15f + 0.75f * frac);
-                        float yOffset = Random.Range(-0.02f, 0.02f) * branchLen;
-                        float rand = Random.Range(-0.09f, 0.09f) * branchLen;
-                        float tilt = Random.Range(-leafBend, leafBend);
-                        float leafRotY = Random.Range(-80f, 80f);
-
-                        Vector3 leafLocal = SanitizeVec(new Vector3(lpos + rand, yOffset, 0));
-                        Quaternion leafRot = SanitizeQuat(Quaternion.Euler(tilt, leafRotY, 0));
-                        Mesh leafMesh = BuildLeafCardMesh();
-
-                        if (!IsMeshFinite(leafMesh)) continue;
-                        CombineInstance ciLeaf = new CombineInstance();
-                        ciLeaf.mesh = leafMesh;
-                        ciLeaf.transform = Matrix4x4.TRS(pos, rot, Vector3.one) * Matrix4x4.TRS(leafLocal, leafRot, Vector3.one);
-                        leafInstances.Add(ciLeaf);
-                    }
+                    if (!IsMeshFinite(leafMesh)) continue;
+                    CombineInstance ciLeaf = new CombineInstance();
+                    ciLeaf.mesh = leafMesh;
+                    ciLeaf.transform = Matrix4x4.TRS(pos, rot, Vector3.one) * Matrix4x4.TRS(leafLocal, leafRot, Vector3.one);
+                    leafInstances.Add(ciLeaf);
                 }
             }
 
