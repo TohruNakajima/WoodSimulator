@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 38d3c86485f671945a522c3c2db02aef, type: 3}
+  m_Name: Birch
+  m_EditorClassIdentifier: 
+  treeType: 3
+  trunkHeight: 25.19
+  trunkRadius: 0.45
+  curvature: 2
+  recursionDepth: 5
+  primaryBranches: 10
+  maxBranchAngle: 90
+  useRadiusSliders: 1
+  radiusStart: 1
+  radiusEnd: 0.1
+  radiusByDepth:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: -0.9
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0.1
+      inSlope: -0.9
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  leafScale: 0.087
+  leafThicknessMin: 0.102
+  leafThicknessMax: 0.314
+  leavesPerBranch: 4
+  globalLeafCount: 1291
+  leafPrefab: {fileID: 7387371893791401434, guid: 4606332c3d0aedc4584cb29e61d7b51d, type: 3}
+  leafMaterial: {fileID: 2100000, guid: f17fc93ffdab6be4f98ddeafe7d4e0b2, type: 2}
+  fruitCount: 20
+  fruitScale: 0.3
+  minFruitDepth: 1
+  fruitMaterial: {fileID: 0}
+  enablePalmSettings: 0
+  palmLeafYOffset: -0.5
+  palmLeafSpread: 1
+  coconutPrefab: {fileID: 0}
+  coconutCount: 5
+  coconutHeightRange: {x: 0.8, y: 0.95}
+  coconutScale: 1
+  barkMaterial: {fileID: 2100000, guid: a5c8d65783dca4a449c70359a6c3c738, type: 2}

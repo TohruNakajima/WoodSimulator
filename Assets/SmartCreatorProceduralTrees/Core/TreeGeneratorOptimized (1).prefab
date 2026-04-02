@@ -1,0 +1,272 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6628604085759527348
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5266341211244665725}
+  - component: {fileID: 6716390562724618330}
+  - component: {fileID: 6369616464911102703}
+  - component: {fileID: 3174862365035068372}
+  - component: {fileID: 423029852448877366}
+  - component: {fileID: 234861467581434789}
+  - component: {fileID: 6343632584552127573}
+  m_Layer: 0
+  m_Name: TreeGeneratorOptimized (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5266341211244665725
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6628604085759527348}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &6716390562724618330
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6628604085759527348}
+  m_Mesh: {fileID: 0}
+--- !u!23 &6369616464911102703
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6628604085759527348}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &3174862365035068372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6628604085759527348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d03e5e47f5a34544a73be20bdf53559, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  profile: {fileID: 11400000, guid: fc48c539cb318774bb747590a86e6400, type: 2}
+  barkMaterial: {fileID: 2100000, guid: f9bf8ff4f6a85b44986b93fc70328f49, type: 2}
+  branchMaterial: {fileID: 2100000, guid: 1eae427da651caa40bf0acad33d28094, type: 2}
+  leafMaterial: {fileID: 2100000, guid: 5f1f67e0b26274c408f5f85b9edee663, type: 2}
+  fruitMaterial: {fileID: 0}
+  fruitCount: 10
+  fruitScale: 1
+  trunkMesh: 1
+  useSimpleTaper: 1
+  tipRadiusFactor: 0.215
+  taperExponent: 1.5
+  childRadiusFactor: 0.324
+  childLenFactorMin: 0.25
+  childLenFactorMax: 0.7
+  childCountRange: {x: 2, y: 4}
+  branchLengthMultiplier: 0.97
+  branchStartMin: 0.4
+  branchStartMax: 1
+  branchHeightOffset: 0
+  droopBranches: 1
+  balancedPrimaryBranches: 0
+  useFineBranches: 1
+  droopFineBranches: 1
+  fineBranchDroopAngle: 30
+  fineBranchRadius: 0.004
+  fineBranchLength: 0.318
+  fineBranchesPerLeafCluster: 3
+  fineBranchPlacement: 0
+  fineBranchSpacing: 0.25
+  fineBranchSpacingJitter: 0.5
+  leafPosMinOnTwig: 0.8
+  leafPosMaxOnTwig: 1
+  clusterLeavesAlongParent: 0
+  clusterMinOnBranch: 0.7
+  clusterMaxOnBranch: 1
+  extraTrunkCarve: 0
+  palmCurveDirectionAndHeight: {x: 1, y: 1}
+  leafMultiplier: 1
+  palmLeafSpread: 1
+  palmLeafYOffset: 0
+  coconutPrefab: {fileID: 0}
+  coconutCount: 5
+  coconutHeightRange: {x: 0.8, y: 0.95}
+  coconutScale: 1
+  minLeafDepth: 2
+  leafDensity: 6
+  branchWeepFactor: 0
+  seed: 0
+  liveUpdate: 0
+  surfaceNoiseStrength: 0.04
+  surfaceNoiseFrequency: 2
+  trunkBulgeAmplitude: 0
+  trunkBulgeFrequency: 0.1
+  trunkGrooveDepth: 0
+  trunkGrooveCount: 5
+  trunkGrooveTwist: -3
+  gnarlStrength: 0.25
+  gnarlFrequency: 0.6
+  trunkLeanCurve: 0
+--- !u!114 &423029852448877366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6628604085759527348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73e390541f8d775489fb4becc74c4122, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trunkHeight: 5
+  trunkRadius: 0.25
+  trunkSegments: 16
+  trunkHeightSegments: 8
+  trunkCurveDirection: {x: 1, y: 0, z: 0}
+  trunkCurveStrength: 0
+  extraTrunkCarve: 0
+  palmLeafYOffset: 0
+  trunkMaterial: {fileID: 0}
+  frondPrefab: {fileID: 0}
+  frondCount: 12
+  frondLength: 3
+  frondDroopAngle: 45
+  coconutPrefab: {fileID: 0}
+  coconutCount: 5
+  coconutRadiusOffset: 0.5
+  coconutScale: 0.3
+--- !u!114 &234861467581434789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6628604085759527348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7913b04a5f65fd74694446df3d49c7d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  whorlCount: 16
+  branchesPerWhorl: 8
+  whorlSpacing: 0.75
+  trunkHeight: 13
+  trunkRadius: 0.22
+  trunkTipRadius: 0.04
+  trunkTaper: 1.33
+  trunkNoiseStrength: 0.09
+  trunkNoiseFrequency: 3.7
+  baseBranchLength: 3.8
+  tipBranchLength: 1.1
+  branchDownwardAngle: 42
+  branchRandomTilt: 8
+  branchThickness: 0.07
+  branchUpCurve: 0.22
+  branchDownwardCurve: 1.2
+  branchStartHeight: 0.09
+  branchEndHeight: 0.95
+  baseLeavesPerBranch: 36
+  leafCardLength: 0.72
+  leafCardWidth: 0.23
+  leafBend: 13
+  leafMaterial: {fileID: 0}
+  barkMaterial: {fileID: 0}
+  seed: 42
+  autoRegenerate: 1
+  addLODGroup: 0
+--- !u!114 &6343632584552127573
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6628604085759527348}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9c393bc55e345dc478f28f365b2d45ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  trunkHeight: 6
+  trunkRadius: 0.2
+  trunkRadialSegments: 12
+  trunkHeightSegments: 8
+  trunkCurveDirection: {x: 0, y: 0, z: 1}
+  trunkCurveStrength: 0.2
+  branchCount: 16
+  branchLength: 5
+  branchSegments: 10
+  branchInitialDroop: 0.4
+  branchDroopAngle: 80
+  branchRadius: 0.05
+  branchMaterial: {fileID: 0}
+  subBranchPerMain: 4
+  subBranchLenMin: 0.4
+  subBranchLenMax: 0.7
+  subBranchDroopAngle: 70
+  subBranchRadius: 0.025
+  tendrilsPerSub: 3
+  tendrilLenMin: 0.3
+  tendrilLenMax: 0.6
+  tendrilDroop: 90
+  tendrilRadius: 0.012
+  leafPrefab: {fileID: 0}
+  leavesPerTendril: 20
+  leafScaleMin: 0.4
+  leafScaleMax: 1
+  leafSideOffset: 0.02
+  trunkMaterial: {fileID: 0}

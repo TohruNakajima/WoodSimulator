@@ -1,0 +1,9 @@
+This asset includes textures generated using ChatGPT (OpenAI image generation features).
+
+All AI-generated content was created solely by the publisher using OpenAI tools, with no copyrighted, trademarked, or third-party-protected material as input or source.
+
+Usage Rights:
+- All generated content is original and allowed for commercial use by the publisher.
+- No real-world brand logos, trademarks, or copyrighted art were used.
+
+This notice is included in accordance with Unity Asset Store’s Content Transparency requirements.
