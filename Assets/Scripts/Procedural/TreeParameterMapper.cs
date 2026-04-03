@@ -23,12 +23,14 @@ namespace WoodSimulator
             float dNorm = Mathf.InverseLerp(MinDiameter, MaxDiameter, data.diameter);
 
             // サイズ系パラメータにgrowthFactorを乗算
+            // 太さ系はgrowthFactorを三乗で適用（成長の悪い木はより細く、良い木はより太く）
+            float thicknessFactor = growthFactor * growthFactor * growthFactor;
             gen.trunkHeight = Mathf.Lerp(5f, 25f, hNorm) * growthFactor;
-            gen.trunkRadius = Mathf.Lerp(0.05f, 0.22f, dNorm) * growthFactor;
-            gen.trunkTipRadius = Mathf.Lerp(0.02f, 0.06f, dNorm) * growthFactor;
+            gen.trunkRadius = Mathf.Lerp(0.05f, 0.22f, dNorm) * thicknessFactor;
+            gen.trunkTipRadius = Mathf.Lerp(0.02f, 0.06f, dNorm) * thicknessFactor;
             gen.baseBranchLength = Mathf.Lerp(1.5f, 4.5f, hNorm) * growthFactor;
             gen.tipBranchLength = Mathf.Lerp(0.3f, 1.5f, hNorm) * growthFactor;
-            gen.branchThickness = Mathf.Lerp(0.03f, 0.10f, dNorm) * growthFactor;
+            gen.branchThickness = Mathf.Lerp(0.03f, 0.10f, dNorm) * thicknessFactor;
             gen.leafCardLength = Mathf.Lerp(0.3f, 1.0f, hNorm) * growthFactor;
             gen.leafCardWidth = Mathf.Lerp(0.10f, 0.30f, hNorm) * growthFactor;
 
