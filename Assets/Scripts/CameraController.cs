@@ -13,12 +13,6 @@ namespace WoodSimulator
         public Vector3 targetPosition = Vector3.zero;
 
         [Header("Camera Settings")]
-        [Tooltip("初期高度（m）")]
-        public float initialHeight = 75f;
-
-        [Tooltip("初期距離")]
-        public float initialDistance = 75f;
-
         [Tooltip("初期回転角度（Y軸）")]
         public float initialRotationY = 0f;
 
@@ -44,17 +38,22 @@ namespace WoodSimulator
         [Tooltip("最小高度（地面貫通防止）")]
         public float minHeight = 10f;
 
+        private float initialHeight;
+        private float initialDistance;
         private float currentDistance;
         private float currentRotationY;
         private Vector3 currentTargetPosition;
 
         private void Start()
         {
+            // シーン上のカメラ位置から初期値を算出
+            Vector3 offset = transform.position - targetPosition;
+            initialHeight = offset.y;
+            initialDistance = new Vector2(offset.x, offset.z).magnitude;
+
             currentDistance = initialDistance;
             currentRotationY = initialRotationY;
             currentTargetPosition = targetPosition;
-
-            UpdateCameraPosition();
         }
 
         private void Update()
