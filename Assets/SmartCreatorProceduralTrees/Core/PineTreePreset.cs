@@ -328,6 +328,38 @@ namespace SmartCreator.ProceduralTrees
                 branchMeshes.Add(ciBranch);
             }
 
+            // --- 頂部（crown）の枝を追加：上向きに生やす ---
+            {
+                float tipY = trunkHeight;
+                float tipRadius = trunkTipRadius * 2.5f;
+                int tipBranchCount = Mathf.Max(3, branchesPerWhorl);
+                float tipLen = Mathf.Max(0.2f, tipBranchLength * 0.7f);
+
+                Random.InitState(seed + 7777);
+                for (int b = 0; b < tipBranchCount; b++)
+                {
+                    float yaw = Random.Range(0f, 360f);
+                    // 小さいpitch角で上向き（0=真横, 負=上向き）
+                    float pitch = Random.Range(-15f, 25f);
+                    float roll = Random.Range(-5f, 5f);
+                    float lenScale = Random.Range(0.6f, 1.1f);
+
+                    Quaternion rot = SanitizeQuat(Quaternion.Euler(pitch, yaw, roll));
+                    Vector3 pos = SanitizeVec(new Vector3(0, tipY, 0) + rot * (Vector3.right * tipRadius));
+                    Mesh branchMesh = BuildProceduralBranchMesh(tipLen * lenScale, branchDownwardCurve * 0.2f, branchThickness * 0.6f);
+
+                    if (!IsMeshFinite(branchMesh))
+                    {
+                        skipped++;
+                        continue;
+                    }
+                    CombineInstance ciBranch = new CombineInstance();
+                    ciBranch.mesh = branchMesh;
+                    ciBranch.transform = Matrix4x4.TRS(pos, rot, Vector3.one);
+                    branchMeshes.Add(ciBranch);
+                }
+            }
+
             if (branchMeshes.Count == 0)
                 return DummySafeMesh("AllBranches");
             if (skipped > 0)
@@ -382,6 +414,48 @@ namespace SmartCreator.ProceduralTrees
                     ciLeaf.mesh = leafMesh;
                     ciLeaf.transform = Matrix4x4.TRS(pos, rot, Vector3.one) * Matrix4x4.TRS(leafLocal, leafRot, Vector3.one);
                     leafInstances.Add(ciLeaf);
+                }
+            }
+
+            // --- 頂部（crown）の葉を追加 ---
+            {
+                float tipY = trunkHeight;
+                float tipRadius = trunkTipRadius * 2.5f;
+                int tipBranchCount = Mathf.Max(3, branchesPerWhorl);
+                float tipLen = Mathf.Max(0.2f, tipBranchLength * 0.7f);
+                int tipLeavesPerBranch = Mathf.RoundToInt(baseLeavesPerBranch * 0.5f);
+
+                Random.InitState(seed + 7777);
+                for (int b = 0; b < tipBranchCount; b++)
+                {
+                    float yaw = Random.Range(0f, 360f);
+                    float pitch = Random.Range(-15f, 25f);
+                    float roll = Random.Range(-5f, 5f);
+                    float lenScale = Random.Range(0.6f, 1.1f);
+
+                    Quaternion rot = SanitizeQuat(Quaternion.Euler(pitch, yaw, roll));
+                    Vector3 pos = SanitizeVec(new Vector3(0, tipY, 0) + rot * (Vector3.right * tipRadius));
+                    float branchLen = tipLen * lenScale;
+
+                    for (int lf = 0; lf < tipLeavesPerBranch; lf++)
+                    {
+                        float frac = lf / (float)tipLeavesPerBranch;
+                        float lpos = branchLen * (0.14f + 0.75f * frac);
+                        float yOffset = Random.Range(-0.03f, 0.03f) * branchLen;
+                        float rand = Random.Range(-0.1f, 0.1f) * branchLen;
+                        float tilt = Random.Range(-leafBend, leafBend);
+                        float leafRotY = Random.Range(-80f, 80f);
+
+                        Vector3 leafLocal = SanitizeVec(new Vector3(lpos + rand, yOffset, 0));
+                        Quaternion leafRot = SanitizeQuat(Quaternion.Euler(tilt, leafRotY, 0));
+                        Mesh leafMesh = BuildLeafCardMesh();
+
+                        if (!IsMeshFinite(leafMesh)) continue;
+                        CombineInstance ciLeaf = new CombineInstance();
+                        ciLeaf.mesh = leafMesh;
+                        ciLeaf.transform = Matrix4x4.TRS(pos, rot, Vector3.one) * Matrix4x4.TRS(leafLocal, leafRot, Vector3.one);
+                        leafInstances.Add(ciLeaf);
+                    }
                 }
             }
 
