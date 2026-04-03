@@ -41,6 +41,7 @@ namespace WoodSimulator
         [Tooltip("1フレームあたりのGenerate()に使える時間バジェット（ミリ秒）")]
         public float frameBudgetMs = 16f;
 
+
         [Header("Thinning")]
         [Tooltip("間伐フェードアウト時間（秒）")]
         public float thinningFadeDuration = 1.0f;
@@ -101,7 +102,7 @@ namespace WoodSimulator
                 var instance = new ProceduralTreeInstance(treeSeed, points[i]);
 
                 // GameObjectを生成
-                var go = new GameObject("Tree");
+                var go = new GameObject("CedarTree");
                 go.transform.SetParent(treeContainer, false);
                 go.transform.position = instance.position;
                 go.transform.rotation = Quaternion.Euler(0f, instance.rotationY, 0f);
@@ -111,9 +112,23 @@ namespace WoodSimulator
                 gen.barkMaterial = barkMaterial;
                 gen.leafMaterial = leafMaterial;
 
+                // LOD1用の簡略Generator（子オブジェクトに配置）
+                var lod1GO = new GameObject("LOD1");
+                lod1GO.transform.SetParent(go.transform, false);
+                var lod1Gen = lod1GO.AddComponent<PineTreeGenerator>();
+                lod1Gen.autoRegenerate = false;
+                lod1Gen.barkMaterial = barkMaterial;
+                lod1Gen.leafMaterial = leafMaterial;
+                lod1Gen.runtimeQuality = 0.3f;
+
                 // ThinningAnimatorを事前にアタッチ（無効状態）
                 var animator = go.AddComponent<ThinningAnimator>();
                 animator.enabled = false;
+
+                // LODGroup
+                var lodGroup = go.AddComponent<LODGroup>();
+                instance.lodGroup = lodGroup;
+                instance.lod1Generator = lod1Gen;
 
                 instance.gameObject = go;
                 instance.generator = gen;
@@ -122,6 +137,7 @@ namespace WoodSimulator
 
             // growthFactor昇順ソート（間伐時の選別用）
             allTrees.Sort((a, b) => a.growthFactor.CompareTo(b.growthFactor));
+
         }
 
         /// <summary>
@@ -191,6 +207,8 @@ namespace WoodSimulator
                 if (tree.gameObject == null || !tree.gameObject.activeSelf) continue;
 
                 TreeParameterMapper.ApplyToGenerator(tree.generator, data, tree.growthFactor, tree.seed);
+                ApplyLOD1Generator(tree.lod1Generator, tree.generator, data, tree.growthFactor, tree.seed);
+                SetupLODGroup(tree);
                 updateProgress = i + 1;
 
                 if (sw.Elapsed.TotalMilliseconds >= frameBudgetMs)
@@ -256,6 +274,84 @@ namespace WoodSimulator
 
                 restored++;
             }
+        }
+
+        /// <summary>
+        /// LOD1用Generatorにパラメータを半減コピーしてGenerate()する。
+        /// </summary>
+        private void ApplyLOD1Generator(PineTreeGenerator lod1Gen, PineTreeGenerator lod0Gen, GrowthData data, float growthFactor, int seed)
+        {
+            if (lod1Gen == null) return;
+
+            // LOD0のパラメータをコピーしつつ構造を半減
+            lod1Gen.trunkHeight = lod0Gen.trunkHeight;
+            lod1Gen.trunkRadius = lod0Gen.trunkRadius;
+            lod1Gen.trunkTipRadius = lod0Gen.trunkTipRadius;
+            lod1Gen.trunkTaper = lod0Gen.trunkTaper;
+            lod1Gen.trunkNoiseStrength = lod0Gen.trunkNoiseStrength;
+            lod1Gen.trunkNoiseFrequency = lod0Gen.trunkNoiseFrequency;
+            lod1Gen.baseBranchLength = lod0Gen.baseBranchLength;
+            lod1Gen.tipBranchLength = lod0Gen.tipBranchLength;
+            lod1Gen.branchDownwardAngle = lod0Gen.branchDownwardAngle;
+            lod1Gen.branchRandomTilt = lod0Gen.branchRandomTilt;
+            lod1Gen.branchThickness = lod0Gen.branchThickness;
+            lod1Gen.branchUpCurve = lod0Gen.branchUpCurve;
+            lod1Gen.branchDownwardCurve = lod0Gen.branchDownwardCurve;
+            lod1Gen.branchStartHeight = lod0Gen.branchStartHeight;
+            lod1Gen.branchEndHeight = lod0Gen.branchEndHeight;
+            lod1Gen.leafCardLength = lod0Gen.leafCardLength;
+            lod1Gen.leafCardWidth = lod0Gen.leafCardWidth;
+            lod1Gen.leafBend = lod0Gen.leafBend;
+            lod1Gen.seed = seed;
+
+            // 構造を半減
+            lod1Gen.whorlCount = Mathf.Max(4, lod0Gen.whorlCount / 2);
+            lod1Gen.branchesPerWhorl = Mathf.Max(2, lod0Gen.branchesPerWhorl / 2);
+            lod1Gen.baseLeavesPerBranch = Mathf.Max(8, lod0Gen.baseLeavesPerBranch / 3);
+
+            lod1Gen.Generate();
+        }
+
+        /// <summary>
+        /// LODGroupにLOD0/LOD1のRendererを登録する。Generate()後に呼ぶ。
+        /// </summary>
+        private void SetupLODGroup(ProceduralTreeInstance tree)
+        {
+            if (tree.lodGroup == null || tree.gameObject == null) return;
+
+            // LOD0: メインGeneratorの子（Trunk/Branches/Leaves）
+            var lod0Renderers = new List<Renderer>();
+            foreach (Transform child in tree.gameObject.transform)
+            {
+                if (child.name == "LOD1") continue;
+                var r = child.GetComponent<Renderer>();
+                if (r != null) lod0Renderers.Add(r);
+            }
+
+            // LOD1: LOD1子オブジェクト内のRenderer
+            var lod1Renderers = new List<Renderer>();
+            if (tree.lod1Generator != null)
+            {
+                var lod1Transform = tree.lod1Generator.transform;
+                foreach (Transform child in lod1Transform)
+                {
+                    var r = child.GetComponent<Renderer>();
+                    if (r != null) lod1Renderers.Add(r);
+                }
+            }
+
+            float lod0Ratio = 0.03f;  // 画面の3%以上 → LOD0
+            float cullRatio = 0.005f;  // 画面の0.5%以下 → カリング
+
+            var lods = new LOD[2];
+            lods[0] = new LOD(lod0Ratio, lod0Renderers.ToArray());
+            lods[1] = new LOD(cullRatio, lod1Renderers.ToArray());
+            tree.lodGroup.SetLODs(lods);
+
+            // 樹高ベースでLODGroupのサイズを手動設定（RecalculateBoundsは初期メッシュに依存して不正確）
+            float treeHeight = tree.generator.trunkHeight;
+            tree.lodGroup.size = treeHeight * 1.2f;
+
         }
 
         /// <summary>

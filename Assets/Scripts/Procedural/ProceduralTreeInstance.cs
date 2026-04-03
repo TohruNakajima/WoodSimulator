@@ -16,6 +16,8 @@ namespace WoodSimulator
         public float rotationY;
         public GameObject gameObject;
         public PineTreeGenerator generator;
+        public PineTreeGenerator lod1Generator;
+        public LODGroup lodGroup;
         public bool isThinned;
         public int thinnedAtAge;
 
