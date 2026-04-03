@@ -122,8 +122,6 @@ namespace WoodSimulator
 
             // growthFactor昇順ソート（間伐時の選別用）
             allTrees.Sort((a, b) => a.growthFactor.CompareTo(b.growthFactor));
-
-
         }
 
         /// <summary>
@@ -228,7 +226,6 @@ namespace WoodSimulator
                 animator.Play(thinningFadeDuration);
                 removed++;
             }
-
         }
 
         /// <summary>
@@ -259,7 +256,6 @@ namespace WoodSimulator
 
                 restored++;
             }
-
         }
 
         /// <summary>
@@ -275,17 +271,5 @@ namespace WoodSimulator
             }
         }
 
-        /// <summary>
-        /// 外部からアクティブ本数を取得。
-        /// </summary>
-        public int GetActiveTreeCount()
-        {
-            int count = 0;
-            foreach (var tree in allTrees)
-            {
-                if (!tree.isThinned) count++;
-            }
-            return count;
-        }
     }
 }

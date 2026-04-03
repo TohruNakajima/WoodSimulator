@@ -61,6 +61,10 @@ namespace SmartCreator.ProceduralTrees
         private Mesh cachedLeavesMesh;
         private BranchPlacement[] cachedPlacements;
 
+        // キャッシュ: 子パーツのコンポーネント参照（transform.Find廃止）
+        private MeshFilter cachedTrunkMF, cachedBranchesMF, cachedLeavesMF;
+        private MeshRenderer cachedTrunkMR, cachedBranchesMR, cachedLeavesMR;
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -126,9 +130,9 @@ namespace SmartCreator.ProceduralTrees
                 cachedBranchesMesh = BuildAllBranchesMeshInto(cachedBranchesMesh, cachedPlacements);
                 cachedLeavesMesh = BuildAllLeavesMeshInto(cachedLeavesMesh, cachedPlacements);
 
-                UpdateOrCreatePart("Trunk", cachedTrunkMesh, barkMaterial);
-                UpdateOrCreatePart("Branches", cachedBranchesMesh, barkMaterial);
-                UpdateOrCreatePart("Leaves", cachedLeavesMesh, leafMaterial);
+                UpdateCachedPart(ref cachedTrunkMF, ref cachedTrunkMR, "Trunk", cachedTrunkMesh, barkMaterial);
+                UpdateCachedPart(ref cachedBranchesMF, ref cachedBranchesMR, "Branches", cachedBranchesMesh, barkMaterial);
+                UpdateCachedPart(ref cachedLeavesMF, ref cachedLeavesMR, "Leaves", cachedLeavesMesh, leafMaterial);
             }
             else
             {
@@ -146,19 +150,27 @@ namespace SmartCreator.ProceduralTrees
             }
         }
 
-        void UpdateOrCreatePart(string name, Mesh mesh, Material mat)
+        void UpdateCachedPart(ref MeshFilter mf, ref MeshRenderer mr, string name, Mesh mesh, Material mat)
         {
             if (mesh == null || mesh.vertexCount < 3) return;
-            var child = transform.Find(name);
-            if (child != null)
+            if (mf == null)
             {
-                child.GetComponent<MeshFilter>().sharedMesh = mesh;
-                child.GetComponent<MeshRenderer>().sharedMaterial = mat;
+                var child = transform.Find(name);
+                if (child != null)
+                {
+                    mf = child.GetComponent<MeshFilter>();
+                    mr = child.GetComponent<MeshRenderer>();
+                }
+                else
+                {
+                    var go = new GameObject(name);
+                    go.transform.SetParent(transform, false);
+                    mf = go.AddComponent<MeshFilter>();
+                    mr = go.AddComponent<MeshRenderer>();
+                }
             }
-            else
-            {
-                CreatePart(name, mesh, mat);
-            }
+            mf.sharedMesh = mesh;
+            mr.sharedMaterial = mat;
         }
 
         void CreatePart(string name, Mesh mesh, Material mat)
@@ -232,19 +244,22 @@ namespace SmartCreator.ProceduralTrees
                 float t = y / (float)heightSegs;
                 float rad = Mathf.Max(0.01f, Mathf.Lerp(trunkRadius, trunkTipRadius, Mathf.Pow(t, trunkTaper)));
                 float h = t * trunkHeight;
+                bool hasNoise = trunkNoiseStrength > 0f && trunkNoiseFrequency > 0f;
                 for (int i = 0; i <= segs; i++)
                 {
                     float ang = 2 * Mathf.PI * i / segs;
+                    float cosA = Mathf.Cos(ang);
+                    float sinA = Mathf.Sin(ang);
                     float noise = 0f;
-                    if (trunkNoiseStrength > 0f && trunkNoiseFrequency > 0f)
+                    if (hasNoise)
                     {
-                        float nx = Mathf.Cos(ang) * trunkNoiseFrequency + t * trunkNoiseFrequency * 0.5f + seed * 0.17f;
-                        float nz = Mathf.Sin(ang) * trunkNoiseFrequency + t * trunkNoiseFrequency * 0.37f - seed * 0.11f;
+                        float nx = cosA * trunkNoiseFrequency + t * trunkNoiseFrequency * 0.5f + seed * 0.17f;
+                        float nz = sinA * trunkNoiseFrequency + t * trunkNoiseFrequency * 0.37f - seed * 0.11f;
                         noise = Mathf.PerlinNoise(nx, nz) * trunkNoiseStrength;
                     }
                     float r = Mathf.Max(0.01f, rad + noise);
-                    verts[vi] = new Vector3(Mathf.Cos(ang) * r, h, Mathf.Sin(ang) * r);
-                    norms[vi] = (new Vector3(Mathf.Cos(ang), 0.6f, Mathf.Sin(ang))).normalized;
+                    verts[vi] = new Vector3(cosA * r, h, sinA * r);
+                    norms[vi] = (new Vector3(cosA, 0.6f, sinA)).normalized;
                     uvs[vi] = new Vector2(i / (float)segs, t);
                     vi++;
                 }
@@ -382,6 +397,17 @@ namespace SmartCreator.ProceduralTrees
             float curveMult = downCurve * branchLen * 0.28f;
             float noiseMult = thickness * 0.31f;
             int baseVert = vi;
+            Vector3 transformedNorm = mat.MultiplyVector(Vector3.right);
+
+            // 角度のsin/cosを事前計算
+            float[] sinTable = new float[sides + 1];
+            float[] cosTable = new float[sides + 1];
+            for (int i = 0; i <= sides; i++)
+            {
+                float ang = 2 * Mathf.PI * i / sides;
+                sinTable[i] = Mathf.Sin(ang);
+                cosTable[i] = Mathf.Cos(ang);
+            }
 
             for (int y = 0; y <= steps; y++)
             {
@@ -398,9 +424,9 @@ namespace SmartCreator.ProceduralTrees
                     float ang = 2 * Mathf.PI * i / sides;
                     float nx = Mathf.Sin(ang + len * 0.16f + seed) * noise;
                     float nz = Mathf.Cos(ang + len * 0.13f + seed) * noise;
-                    Vector3 local = new Vector3(len, Mathf.Sin(ang) * rad + curveY + upCurve + nx, Mathf.Cos(ang) * rad + nz);
+                    Vector3 local = new Vector3(len, sinTable[i] * rad + curveY + upCurve + nx, cosTable[i] * rad + nz);
                     verts[vi] = mat.MultiplyPoint3x4(local);
-                    norms[vi] = mat.MultiplyVector(Vector3.right);
+                    norms[vi] = transformedNorm;
                     uvs[vi] = new Vector2(i / (float)sides, t);
                     vi++;
                 }
@@ -538,15 +564,20 @@ namespace SmartCreator.ProceduralTrees
         /// <summary>
         /// 1枚の葉クワッド（4頂点6インデックス）を直接バッファに書き込む。
         /// </summary>
+        static readonly Vector2 leafUV0 = new Vector2(0, 0);
+        static readonly Vector2 leafUV1 = new Vector2(1, 0);
+        static readonly Vector2 leafUV2 = new Vector2(1, 1);
+        static readonly Vector2 leafUV3 = new Vector2(0, 1);
+
         void WriteLeafQuad(Vector3[] verts, Vector3[] norms, Vector2[] uvs, int[] tris,
             ref int vi, ref int ti, Matrix4x4 mat, Vector3 v0, Vector3 v1, Vector3 v2, Vector3 v3)
         {
             int baseIdx = vi;
             Vector3 n = mat.MultiplyVector(Vector3.up);
-            verts[vi] = mat.MultiplyPoint3x4(v0); norms[vi] = n; uvs[vi] = new Vector2(0, 0); vi++;
-            verts[vi] = mat.MultiplyPoint3x4(v1); norms[vi] = n; uvs[vi] = new Vector2(1, 0); vi++;
-            verts[vi] = mat.MultiplyPoint3x4(v2); norms[vi] = n; uvs[vi] = new Vector2(1, 1); vi++;
-            verts[vi] = mat.MultiplyPoint3x4(v3); norms[vi] = n; uvs[vi] = new Vector2(0, 1); vi++;
+            verts[vi] = mat.MultiplyPoint3x4(v0); norms[vi] = n; uvs[vi] = leafUV0; vi++;
+            verts[vi] = mat.MultiplyPoint3x4(v1); norms[vi] = n; uvs[vi] = leafUV1; vi++;
+            verts[vi] = mat.MultiplyPoint3x4(v2); norms[vi] = n; uvs[vi] = leafUV2; vi++;
+            verts[vi] = mat.MultiplyPoint3x4(v3); norms[vi] = n; uvs[vi] = leafUV3; vi++;
 
             tris[ti++] = baseIdx; tris[ti++] = baseIdx + 1; tris[ti++] = baseIdx + 2;
             tris[ti++] = baseIdx; tris[ti++] = baseIdx + 2; tris[ti++] = baseIdx + 3;

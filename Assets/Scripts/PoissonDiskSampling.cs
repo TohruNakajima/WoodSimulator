@@ -115,7 +115,6 @@ namespace WoodSimulator
                 iteration++;
             }
 
-            Debug.Log($"PoissonDiskSampling: Generated {points.Count} points (target: {targetCount}, iterations: {iteration})");
             return points;
         }
 
