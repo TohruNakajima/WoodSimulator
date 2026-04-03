@@ -120,6 +120,10 @@ namespace WoodSimulator
         {
             while (isAutoPlaying)
             {
+                // モデル更新完了を待つ
+                while (forestManager.IsUpdating)
+                    yield return null;
+
                 yield return new WaitForSeconds(autoPlayInterval);
 
                 int next = forestManager.CurrentStageIndex + 1;
