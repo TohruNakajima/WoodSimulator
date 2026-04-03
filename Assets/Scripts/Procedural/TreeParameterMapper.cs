@@ -47,7 +47,10 @@ namespace WoodSimulator
             gen.trunkNoiseStrength = 0.06f;
             gen.trunkNoiseFrequency = 4f;
             gen.branchRandomTilt = Mathf.Lerp(6f, 10f, hNorm);
-            gen.branchStartHeight = Mathf.Lerp(0.05f, 0.15f, hNorm);
+            // 下枝の高さ: 20年まではほぼ変化なし、25年以降から急上昇し最大0.50
+            float ageT = Mathf.InverseLerp(20f, 80f, data.age);
+            ageT = Mathf.Clamp01(ageT);
+            gen.branchStartHeight = Mathf.Lerp(0.05f, 0.50f, ageT * ageT);
             gen.branchEndHeight = Mathf.Lerp(0.90f, 0.98f, hNorm);
             gen.leafBend = 14f;
 
