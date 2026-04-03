@@ -50,6 +50,7 @@ namespace WoodSimulator
 
         // --- 内部状態 ---
         private List<ProceduralTreeInstance> allTrees = new List<ProceduralTreeInstance>();
+        private List<ProceduralTreeInstance> activeTreesCache = new List<ProceduralTreeInstance>();
         private Transform treeContainer;
         private int currentStageIndex = -1;
         private Coroutine updateCoroutine;
@@ -100,7 +101,7 @@ namespace WoodSimulator
                 var instance = new ProceduralTreeInstance(treeSeed, points[i]);
 
                 // GameObjectを生成
-                var go = new GameObject($"Tree_{i:D3}");
+                var go = new GameObject("Tree");
                 go.transform.SetParent(treeContainer, false);
                 go.transform.position = instance.position;
                 go.transform.rotation = Quaternion.Euler(0f, instance.rotationY, 0f);
@@ -109,6 +110,10 @@ namespace WoodSimulator
                 gen.autoRegenerate = false; // 手動管理
                 gen.barkMaterial = barkMaterial;
                 gen.leafMaterial = leafMaterial;
+
+                // ThinningAnimatorを事前にアタッチ（無効状態）
+                var animator = go.AddComponent<ThinningAnimator>();
+                animator.enabled = false;
 
                 instance.gameObject = go;
                 instance.generator = gen;
@@ -174,24 +179,26 @@ namespace WoodSimulator
         /// </summary>
         private IEnumerator UpdateTreesGradually(GrowthData data)
         {
-            var activeList = GetActiveTrees();
-            updateTotal = activeList.Count;
+            RefreshActiveTreesCache();
+            updateTotal = activeTreesCache.Count;
             updateProgress = 0;
 
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
+            int lastReportedProgress = 0;
 
-            for (int i = 0; i < activeList.Count; i++)
+            for (int i = 0; i < activeTreesCache.Count; i++)
             {
-                var tree = activeList[i];
+                var tree = activeTreesCache[i];
                 if (tree.gameObject == null || !tree.gameObject.activeSelf) continue;
 
                 TreeParameterMapper.ApplyToGenerator(tree.generator, data, tree.growthFactor, tree.seed);
                 updateProgress = i + 1;
-                OnUpdateProgress?.Invoke(updateProgress, updateTotal);
 
                 if (sw.Elapsed.TotalMilliseconds >= frameBudgetMs)
                 {
+                    OnUpdateProgress?.Invoke(updateProgress, updateTotal);
+                    lastReportedProgress = updateProgress;
                     yield return null;
                     sw.Restart();
                 }
@@ -217,8 +224,8 @@ namespace WoodSimulator
                 tree.isThinned = true;
                 tree.thinnedAtAge = currentAge;
 
-                var animator = tree.gameObject.AddComponent<ThinningAnimator>();
-                animator.Play(thinningFadeDuration, null);
+                var animator = tree.gameObject.GetComponent<ThinningAnimator>();
+                animator.Play(thinningFadeDuration);
                 removed++;
             }
 
@@ -242,10 +249,9 @@ namespace WoodSimulator
 
                 if (tree.gameObject != null)
                 {
-                    // ThinningAnimatorが残っていたら除去
                     var animator = tree.gameObject.GetComponent<ThinningAnimator>();
                     if (animator != null)
-                        Destroy(animator);
+                        animator.Stop();
 
                     tree.gameObject.SetActive(true);
                     tree.gameObject.transform.localScale = Vector3.one;
@@ -257,17 +263,16 @@ namespace WoodSimulator
         }
 
         /// <summary>
-        /// 現在アクティブな（間伐されていない）木のリストを返す。
+        /// activeTreesCacheを最新の状態に更新する。
         /// </summary>
-        private List<ProceduralTreeInstance> GetActiveTrees()
+        private void RefreshActiveTreesCache()
         {
-            var active = new List<ProceduralTreeInstance>();
+            activeTreesCache.Clear();
             foreach (var tree in allTrees)
             {
                 if (!tree.isThinned && tree.gameObject != null && tree.gameObject.activeSelf)
-                    active.Add(tree);
+                    activeTreesCache.Add(tree);
             }
-            return active;
         }
 
         /// <summary>

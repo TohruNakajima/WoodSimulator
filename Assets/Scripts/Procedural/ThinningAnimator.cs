@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using UnityEngine;
 
@@ -6,18 +5,30 @@ namespace WoodSimulator
 {
     /// <summary>
     /// 間伐対象の木にアタッチし、Y方向スケール縮小でフェードアウト演出を行う。
-    /// 演出完了後にコールバックを呼び出す。
+    /// 初期化時にアタッチされ、Play/Stopで再利用される。
     /// </summary>
     public class ThinningAnimator : MonoBehaviour
     {
         private float duration = 1.0f;
-        private Action onComplete;
+        private Coroutine animCoroutine;
 
-        public void Play(float duration, Action onComplete)
+        public void Play(float duration)
         {
             this.duration = duration;
-            this.onComplete = onComplete;
-            StartCoroutine(AnimateCoroutine());
+            enabled = true;
+            if (animCoroutine != null)
+                StopCoroutine(animCoroutine);
+            animCoroutine = StartCoroutine(AnimateCoroutine());
+        }
+
+        public void Stop()
+        {
+            if (animCoroutine != null)
+            {
+                StopCoroutine(animCoroutine);
+                animCoroutine = null;
+            }
+            enabled = false;
         }
 
         private IEnumerator AnimateCoroutine()
@@ -29,8 +40,7 @@ namespace WoodSimulator
             while (elapsed < duration)
             {
                 elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / duration);
-                // EaseInで加速感を出す
+                float t = elapsed / duration;
                 float easedT = t * t;
                 transform.localScale = Vector3.Lerp(startScale, endScale, easedT);
                 yield return null;
@@ -38,7 +48,8 @@ namespace WoodSimulator
 
             transform.localScale = endScale;
             gameObject.SetActive(false);
-            onComplete?.Invoke();
+            animCoroutine = null;
+            enabled = false;
         }
     }
 }
