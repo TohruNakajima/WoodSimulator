@@ -47,8 +47,19 @@ namespace SmartCreator.ProceduralTrees
         public bool autoRegenerate = true;
         public bool addLODGroup = false;
 
+        [Header("Runtime Quality")]
+        [Tooltip("ランタイム時のメッシュ品質（0.0〜1.0）。低いほど軽い")]
+        [Range(0.1f, 1.0f)]
+        public float runtimeQuality = 0.5f;
+
         // Delayed regeneration flag (for safe auto-regeneration)
         [System.NonSerialized] private bool pendingAutoGen = false;
+
+        // キャッシュ: ランタイム時のMesh再利用
+        private Mesh cachedTrunkMesh;
+        private Mesh cachedBranchesMesh;
+        private Mesh cachedLeavesMesh;
+        private BranchPlacement[] cachedPlacements;
 
 #if UNITY_EDITOR
         private void OnValidate()
@@ -106,23 +117,33 @@ namespace SmartCreator.ProceduralTrees
             if (addLODGroup && GetComponent<LODGroup>() == null)
                 gameObject.AddComponent<LODGroup>();
 
-            var trunkMesh    = BuildTrunkMesh();
-            var branchesMesh = BuildAllBranchesMesh(false);
-            var leavesMesh   = BuildAllLeavesMesh(false);
-
-            if (!IsMeshFinite(trunkMesh)) trunkMesh = DummySafeMesh("TrunkFallback");
-            if (!IsMeshFinite(branchesMesh)) branchesMesh = DummySafeMesh("BranchesFallback");
-            if (!IsMeshFinite(leavesMesh)) leavesMesh = DummySafeMesh("LeavesFallback");
-
             if (Application.isPlaying)
             {
-                // ランタイム: 既存の子GameObjectを使い回してメッシュだけ差し替え
-                UpdateOrCreatePart("Trunk", trunkMesh, barkMaterial);
-                UpdateOrCreatePart("Branches", branchesMesh, barkMaterial);
-                UpdateOrCreatePart("Leaves", leavesMesh, leafMaterial);
+                // ランタイム: キャッシュ済みplacementsを使い、Meshオブジェクトを再利用
+                cachedPlacements = GenerateBranchPlacements();
+
+                cachedTrunkMesh = BuildTrunkMeshInto(cachedTrunkMesh);
+                cachedBranchesMesh = BuildAllBranchesMeshInto(cachedBranchesMesh, cachedPlacements);
+                cachedLeavesMesh = BuildAllLeavesMeshInto(cachedLeavesMesh, cachedPlacements);
+
+                if (!IsMeshFinite(cachedTrunkMesh)) cachedTrunkMesh = DummySafeMesh("TrunkFallback");
+                if (!IsMeshFinite(cachedBranchesMesh)) cachedBranchesMesh = DummySafeMesh("BranchesFallback");
+                if (!IsMeshFinite(cachedLeavesMesh)) cachedLeavesMesh = DummySafeMesh("LeavesFallback");
+
+                UpdateOrCreatePart("Trunk", cachedTrunkMesh, barkMaterial);
+                UpdateOrCreatePart("Branches", cachedBranchesMesh, barkMaterial);
+                UpdateOrCreatePart("Leaves", cachedLeavesMesh, leafMaterial);
             }
             else
             {
+                var trunkMesh    = BuildTrunkMesh();
+                var branchesMesh = BuildAllBranchesMesh(false);
+                var leavesMesh   = BuildAllLeavesMesh(false);
+
+                if (!IsMeshFinite(trunkMesh)) trunkMesh = DummySafeMesh("TrunkFallback");
+                if (!IsMeshFinite(branchesMesh)) branchesMesh = DummySafeMesh("BranchesFallback");
+                if (!IsMeshFinite(leavesMesh)) leavesMesh = DummySafeMesh("LeavesFallback");
+
                 CreatePart("Trunk", trunkMesh, barkMaterial);
                 CreatePart("Branches", branchesMesh, barkMaterial);
                 CreatePart("Leaves", leavesMesh, leafMaterial);
@@ -193,6 +214,335 @@ namespace SmartCreator.ProceduralTrees
             mesh.RecalculateBounds();
             return mesh;
         }
+
+        // --- ランタイム最適化ビルダー（Meshオブジェクト再利用 + 品質削減） ---
+
+        Mesh BuildTrunkMeshInto(Mesh existing)
+        {
+            float q = runtimeQuality;
+            int segs = Mathf.Max(6, Mathf.RoundToInt(whorlCount * 2 * q));
+            int heightSegs = Mathf.Max(5, Mathf.RoundToInt(whorlCount * q));
+
+            int vertCount = (heightSegs + 1) * (segs + 1) + 2;
+            var verts = new Vector3[vertCount];
+            var norms = new Vector3[vertCount];
+            var uvs = new Vector2[vertCount];
+            int triCount = heightSegs * segs * 6 + segs * 3 * 2;
+            var tris = new int[triCount];
+
+            int vi = 0;
+            for (int y = 0; y <= heightSegs; y++)
+            {
+                float t = y / (float)heightSegs;
+                float rad = Mathf.Max(0.01f, Mathf.Lerp(trunkRadius, trunkTipRadius, Mathf.Pow(t, trunkTaper)));
+                float h = t * trunkHeight;
+                for (int i = 0; i <= segs; i++)
+                {
+                    float ang = 2 * Mathf.PI * i / segs;
+                    float noise = 0f;
+                    if (trunkNoiseStrength > 0f && trunkNoiseFrequency > 0f)
+                    {
+                        float nx = Mathf.Cos(ang) * trunkNoiseFrequency + t * trunkNoiseFrequency * 0.5f + seed * 0.17f;
+                        float nz = Mathf.Sin(ang) * trunkNoiseFrequency + t * trunkNoiseFrequency * 0.37f - seed * 0.11f;
+                        noise = Mathf.PerlinNoise(nx, nz) * trunkNoiseStrength;
+                    }
+                    float r = Mathf.Max(0.01f, rad + noise);
+                    verts[vi] = new Vector3(Mathf.Cos(ang) * r, h, Mathf.Sin(ang) * r);
+                    norms[vi] = (new Vector3(Mathf.Cos(ang), 0.6f, Mathf.Sin(ang))).normalized;
+                    uvs[vi] = new Vector2(i / (float)segs, t);
+                    vi++;
+                }
+            }
+
+            int ring = segs + 1;
+            int ti = 0;
+            for (int y = 0; y < heightSegs; y++)
+                for (int i = 0; i < segs; i++)
+                {
+                    int idx = y * ring + i;
+                    tris[ti++] = idx; tris[ti++] = idx + ring; tris[ti++] = idx + ring + 1;
+                    tris[ti++] = idx; tris[ti++] = idx + ring + 1; tris[ti++] = idx + 1;
+                }
+
+            // Tip
+            verts[vi] = new Vector3(0, trunkHeight + trunkTipRadius * 1.1f, 0);
+            norms[vi] = Vector3.up;
+            uvs[vi] = new Vector2(0.5f, 1f);
+            int tipVert = vi; vi++;
+            int yTip = heightSegs * ring;
+            for (int i = 0; i < segs; i++)
+            {
+                tris[ti++] = yTip + i; tris[ti++] = yTip + i + 1; tris[ti++] = tipVert;
+            }
+
+            // Base cap
+            verts[vi] = Vector3.zero;
+            norms[vi] = Vector3.down;
+            uvs[vi] = new Vector2(0.5f, 0);
+            int baseVert = vi;
+            for (int i = 0; i < segs; i++)
+            {
+                tris[ti++] = i + 1; tris[ti++] = i; tris[ti++] = baseVert;
+            }
+
+            if (existing == null) existing = new Mesh();
+            existing.Clear();
+            existing.name = "Trunk";
+            existing.vertices = verts;
+            existing.normals = norms;
+            existing.uv = uvs;
+            existing.triangles = tris;
+            existing.RecalculateBounds();
+            return existing;
+        }
+
+        Mesh BuildAllBranchesMeshInto(Mesh existing, BranchPlacement[] placements)
+        {
+            if (branchesPerWhorl < 1 || whorlCount < 2 || branchEndHeight <= branchStartHeight)
+            {
+                if (existing == null) existing = new Mesh();
+                existing.Clear();
+                return DummySafeMesh("AllBranches");
+            }
+
+            float q = runtimeQuality;
+            int rtSides = Mathf.Max(4, Mathf.RoundToInt(7 * q));
+            int rtSteps = Mathf.Max(3, Mathf.RoundToInt(6 * q));
+
+            // 枝の間引き: quality に応じてスキップ
+            int branchStep = q < 0.6f ? 2 : 1;
+
+            List<CombineInstance> branchMeshes = new List<CombineInstance>(placements.Length / branchStep + 16);
+
+            for (int i = 0; i < placements.Length; i += branchStep)
+            {
+                var bp = placements[i];
+                float safeNorm = Mathf.Min(bp.heightNorm, 0.99f);
+                float y = safeNorm * trunkHeight;
+                float branchLen = Mathf.Max(0.2f, Mathf.Lerp(baseBranchLength, tipBranchLength, safeNorm) * bp.lengthScale);
+                float trunkRad = Mathf.Max(0.02f, Mathf.Lerp(trunkRadius * 1.4f, trunkTipRadius * 2.3f, safeNorm));
+
+                Quaternion rot = SanitizeQuat(Quaternion.Euler(bp.pitchAngle, bp.yawAngle, bp.rollAngle));
+                Vector3 pos = new Vector3(0, y, 0) + rot * (Vector3.right * trunkRad);
+                float thisCurve = Mathf.Lerp(branchDownwardCurve, branchDownwardCurve * 0.28f, safeNorm);
+                float thisThick = Mathf.Lerp(branchThickness, branchThickness * 0.5f, safeNorm);
+                Mesh branchMesh = BuildBranchMeshRT(branchLen, thisCurve, thisThick, rtSides, rtSteps);
+
+                if (branchMesh == null || !IsMeshFinite(branchMesh)) continue;
+                branchMeshes.Add(new CombineInstance { mesh = branchMesh, transform = Matrix4x4.TRS(pos, rot, Vector3.one) });
+            }
+
+            // 頂部枝
+            {
+                float tipY = trunkHeight;
+                float tipRadius = trunkTipRadius * 2.5f;
+                int tipBranchCount = Mathf.Max(3, branchesPerWhorl);
+                float tipLen = Mathf.Max(0.2f, tipBranchLength * 0.7f);
+
+                Random.InitState(seed + 7777);
+                for (int b = 0; b < tipBranchCount; b++)
+                {
+                    float yaw = Random.Range(0f, 360f);
+                    float pitch = Random.Range(-15f, 25f);
+                    float roll = Random.Range(-5f, 5f);
+                    float lenScale = Random.Range(0.6f, 1.1f);
+
+                    Quaternion rot = SanitizeQuat(Quaternion.Euler(pitch, yaw, roll));
+                    Vector3 pos = new Vector3(0, tipY, 0) + rot * (Vector3.right * tipRadius);
+                    Mesh branchMesh = BuildBranchMeshRT(tipLen * lenScale, branchDownwardCurve * 0.2f, branchThickness * 0.6f, rtSides, rtSteps);
+
+                    if (branchMesh == null || !IsMeshFinite(branchMesh)) continue;
+                    branchMeshes.Add(new CombineInstance { mesh = branchMesh, transform = Matrix4x4.TRS(pos, rot, Vector3.one) });
+                }
+            }
+
+            if (branchMeshes.Count == 0)
+                return DummySafeMesh("AllBranches");
+
+            if (existing == null) existing = new Mesh();
+            existing.Clear();
+            existing.name = "AllBranches";
+            if (branchMeshes.Count == 0)
+                return DummySafeMesh("AllBranches");
+            existing.CombineMeshes(branchMeshes.ToArray(), true, true, false);
+            if (!IsMeshFinite(existing)) return DummySafeMesh("AllBranches");
+            existing.RecalculateBounds();
+            return existing;
+        }
+
+        Mesh BuildBranchMeshRT(float branchLen, float downwardCurveAmount, float thickness, int sides, int steps)
+        {
+            float baseRad = Mathf.Max(0.01f, thickness * 0.98f);
+            float tipRad = Mathf.Max(0.004f, thickness * 0.19f);
+            branchLen = Mathf.Max(0.2f, branchLen);
+
+            int vertCount = (steps + 1) * (sides + 1);
+            var verts = new Vector3[vertCount];
+            var norms = new Vector3[vertCount];
+            var uvs = new Vector2[vertCount];
+            int triCount = steps * sides * 6;
+            var tris = new int[triCount];
+
+            float curveMult = downwardCurveAmount * branchLen * 0.28f;
+            float noiseMult = thickness * 0.31f;
+
+            int vi = 0;
+            for (int y = 0; y <= steps; y++)
+            {
+                float t = y / (float)steps;
+                float len = t * branchLen;
+                float rad = Mathf.Max(0.004f, Mathf.Lerp(baseRad, tipRad, t));
+                float curveY = -Mathf.Pow(Mathf.Sin(Mathf.PI * t), 1.13f) * curveMult;
+                float upCurve = branchUpCurve * Mathf.Sin(Mathf.PI * t) * branchLen * 0.11f;
+                float noise = Mathf.PerlinNoise(t * 3.1f + seed * 0.11f, len * 0.5f + seed * 0.41f) * noiseMult * Mathf.Pow(1 - t, 2.2f);
+
+                for (int i = 0; i <= sides; i++)
+                {
+                    float ang = 2 * Mathf.PI * i / sides;
+                    float nx = Mathf.Sin(ang + len * 0.16f + seed) * noise;
+                    float nz = Mathf.Cos(ang + len * 0.13f + seed) * noise;
+                    verts[vi] = new Vector3(len, Mathf.Sin(ang) * rad + curveY + upCurve + nx, Mathf.Cos(ang) * rad + nz);
+                    norms[vi] = Vector3.right;
+                    uvs[vi] = new Vector2(i / (float)sides, t);
+                    vi++;
+                }
+            }
+
+            int ring = sides + 1;
+            int ti = 0;
+            for (int y = 0; y < steps; y++)
+                for (int i = 0; i < sides; i++)
+                {
+                    int idx = y * ring + i;
+                    tris[ti++] = idx; tris[ti++] = idx + ring; tris[ti++] = idx + ring + 1;
+                    tris[ti++] = idx; tris[ti++] = idx + ring + 1; tris[ti++] = idx + 1;
+                }
+
+            Mesh mesh = new Mesh();
+            mesh.name = "Branch";
+            mesh.vertices = verts;
+            mesh.normals = norms;
+            mesh.uv = uvs;
+            mesh.triangles = tris;
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        Mesh BuildAllLeavesMeshInto(Mesh existing, BranchPlacement[] placements)
+        {
+            float q = runtimeQuality;
+            int leafStep = q < 0.6f ? 2 : 1; // 枝の間引き（枝ビルダーと同じ）
+            float leafSkipRate = q; // 葉の間引き率
+
+            // 葉カードメッシュを1つだけ生成して使い回す
+            float L = Mathf.Max(0.01f, leafCardLength);
+            float W = Mathf.Max(0.01f, leafCardWidth);
+            Mesh sharedLeafMesh = new Mesh();
+            sharedLeafMesh.name = "LeafCard";
+            sharedLeafMesh.vertices = new Vector3[4] {
+                new Vector3(0, -W*0.5f, 0), new Vector3(L, -W*0.5f, 0),
+                new Vector3(L, W*0.5f, 0), new Vector3(0, W*0.5f, 0)
+            };
+            sharedLeafMesh.triangles = new int[6] {0,1,2, 0,2,3};
+            sharedLeafMesh.uv = new Vector2[4] {
+                new Vector2(0,0), new Vector2(1,0), new Vector2(1,1), new Vector2(0,1)
+            };
+            sharedLeafMesh.normals = new Vector3[4] { Vector3.up, Vector3.up, Vector3.up, Vector3.up };
+            sharedLeafMesh.RecalculateBounds();
+
+            List<CombineInstance> leafInstances = new List<CombineInstance>(placements.Length * baseLeavesPerBranch / 2);
+
+            Random.InitState(seed + 9999);
+            for (int i = 0; i < placements.Length; i += leafStep)
+            {
+                var bp = placements[i];
+                float safeNorm = Mathf.Min(bp.heightNorm, 0.99f);
+                float y = safeNorm * trunkHeight * 0.98f;
+                float branchLen = Mathf.Max(0.2f, Mathf.Lerp(baseBranchLength, tipBranchLength, safeNorm) * bp.lengthScale);
+                float trunkRad = Mathf.Max(0.02f, Mathf.Lerp(trunkRadius * 1.4f, trunkTipRadius * 2.3f, safeNorm));
+
+                Quaternion rot = SanitizeQuat(Quaternion.Euler(bp.pitchAngle, bp.yawAngle, bp.rollAngle));
+                Vector3 pos = new Vector3(0, y, 0) + rot * (Vector3.right * trunkRad);
+
+                int leavesPerBranch = Mathf.RoundToInt(Mathf.Lerp(baseLeavesPerBranch * 1.2f, baseLeavesPerBranch * 0.45f, safeNorm) * leafSkipRate);
+                if (leavesPerBranch <= 0) continue;
+
+                Matrix4x4 branchMatrix = Matrix4x4.TRS(pos, rot, Vector3.one);
+                for (int lf = 0; lf < leavesPerBranch; lf++)
+                {
+                    float frac = lf / (float)leavesPerBranch;
+                    float lpos = branchLen * (0.14f + 0.75f * frac);
+                    float yOffset = Random.Range(-0.04f, 0.04f) * branchLen;
+                    float rand = Random.Range(-0.13f, 0.13f) * branchLen;
+                    float tilt = Random.Range(-leafBend, leafBend);
+                    float leafRotY = Random.Range(-80f, 80f);
+
+                    Vector3 leafLocal = new Vector3(lpos + rand, yOffset, 0);
+                    Quaternion leafRot = Quaternion.Euler(tilt, leafRotY, 0);
+
+                    leafInstances.Add(new CombineInstance {
+                        mesh = sharedLeafMesh,
+                        transform = branchMatrix * Matrix4x4.TRS(leafLocal, leafRot, Vector3.one)
+                    });
+                }
+            }
+
+            // 頂部の葉
+            {
+                float tipY = trunkHeight;
+                float tipRadius = trunkTipRadius * 2.5f;
+                int tipBranchCount = Mathf.Max(3, branchesPerWhorl);
+                float tipLen = Mathf.Max(0.2f, tipBranchLength * 0.7f);
+                int tipLeavesPerBranch = Mathf.RoundToInt(baseLeavesPerBranch * 0.5f * leafSkipRate);
+
+                Random.InitState(seed + 7777);
+                for (int b = 0; b < tipBranchCount; b++)
+                {
+                    float yaw = Random.Range(0f, 360f);
+                    float pitch = Random.Range(-15f, 25f);
+                    float roll = Random.Range(-5f, 5f);
+                    float lenScale = Random.Range(0.6f, 1.1f);
+
+                    Quaternion rot = SanitizeQuat(Quaternion.Euler(pitch, yaw, roll));
+                    Vector3 pos = new Vector3(0, tipY, 0) + rot * (Vector3.right * tipRadius);
+                    float branchLen = tipLen * lenScale;
+                    Matrix4x4 branchMatrix = Matrix4x4.TRS(pos, rot, Vector3.one);
+
+                    for (int lf = 0; lf < tipLeavesPerBranch; lf++)
+                    {
+                        float frac = lf / (float)tipLeavesPerBranch;
+                        float lpos = branchLen * (0.14f + 0.75f * frac);
+                        float yOffset = Random.Range(-0.03f, 0.03f) * branchLen;
+                        float rand = Random.Range(-0.1f, 0.1f) * branchLen;
+                        float tilt = Random.Range(-leafBend, leafBend);
+                        float leafRotY = Random.Range(-80f, 80f);
+
+                        Vector3 leafLocal = new Vector3(lpos + rand, yOffset, 0);
+                        Quaternion leafRot = Quaternion.Euler(tilt, leafRotY, 0);
+
+                        leafInstances.Add(new CombineInstance {
+                            mesh = sharedLeafMesh,
+                            transform = branchMatrix * Matrix4x4.TRS(leafLocal, leafRot, Vector3.one)
+                        });
+                    }
+                }
+            }
+
+            if (leafInstances.Count == 0)
+                return DummySafeMesh("AllLeaves");
+
+            if (existing == null) existing = new Mesh();
+            existing.Clear();
+            existing.name = "AllLeaves";
+            if (leafInstances.Count == 0)
+                return DummySafeMesh("AllLeaves");
+            existing.CombineMeshes(leafInstances.ToArray(), true, true, false);
+            if (!IsMeshFinite(existing)) return DummySafeMesh("AllLeaves");
+            existing.RecalculateBounds();
+            return existing;
+        }
+
+        // --- エディタ用ビルダー（既存のまま） ---
 
         // Full Mesh Builders!
         Mesh BuildTrunkMesh()

@@ -39,7 +39,7 @@ namespace WoodSimulator
 
         [Header("Performance")]
         [Tooltip("1フレームあたりのGenerate()に使える時間バジェット（ミリ秒）")]
-        public float frameBudgetMs = 8f;
+        public float frameBudgetMs = 16f;
 
         [Header("Thinning")]
         [Tooltip("間伐フェードアウト時間（秒）")]
