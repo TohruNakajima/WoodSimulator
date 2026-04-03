@@ -327,7 +327,7 @@ namespace SmartCreator.ProceduralTrees
             // 枝本数を事前計算してバッファサイズを確定
             int branchCount = 0;
             for (int i = 0; i < placements.Length; i += branchStep) branchCount++;
-            int tipBranchCount = Mathf.Max(3, branchesPerWhorl);
+            int tipBranchCount = Mathf.Max(6, branchesPerWhorl * 2);
             int totalBranches = branchCount + tipBranchCount;
 
             int vertsPerBranch = (steps + 1) * (sides + 1);
@@ -361,12 +361,12 @@ namespace SmartCreator.ProceduralTrees
             Random.InitState(seed + 7777);
             float tipY2 = trunkHeight;
             float tipRad2 = trunkTipRadius * 2.5f;
-            float tipLen2 = Mathf.Max(0.2f, tipBranchLength * 0.7f);
+            float tipLen2 = Mathf.Max(0.2f, tipBranchLength * 1.5f);
             for (int b = 0; b < tipBranchCount; b++)
             {
                 float yaw = Random.Range(0f, 360f);
-                float pitch = Random.Range(-15f, 25f);
-                float roll = Random.Range(-5f, 5f);
+                float pitch = Random.Range(-5f, 5f);
+                float roll = Random.Range(-75f, -50f);
                 float lenScale = Random.Range(0.6f, 1.1f);
 
                 Quaternion rot = Quaternion.Euler(pitch, yaw, roll);
@@ -374,7 +374,7 @@ namespace SmartCreator.ProceduralTrees
                 Matrix4x4 mat = Matrix4x4.TRS(pos, rot, Vector3.one);
 
                 WriteBranchVerts(allVerts, allNorms, allUvs, allTris, ref globalVi, ref globalTi,
-                    mat, tipLen2 * lenScale, branchDownwardCurve * 0.2f, branchThickness * 0.6f, sides, steps, ring);
+                    mat, tipLen2 * lenScale, branchDownwardCurve * 0.8f, branchThickness * 0.6f, sides, steps, ring);
             }
 
             existing.vertices = allVerts;
@@ -473,8 +473,8 @@ namespace SmartCreator.ProceduralTrees
                 int lpb = Mathf.RoundToInt(Mathf.Lerp(baseLeavesPerBranch * 1.2f, baseLeavesPerBranch * 0.45f, safeNorm) * leafSkipRate);
                 if (lpb > 0) totalLeaves += lpb;
             }
-            int tipBranchCount = Mathf.Max(3, branchesPerWhorl);
-            int tipLeavesPerBranch = Mathf.RoundToInt(baseLeavesPerBranch * 0.5f * leafSkipRate);
+            int tipBranchCount = Mathf.Max(6, branchesPerWhorl * 2);
+            int tipLeavesPerBranch = Mathf.RoundToInt(baseLeavesPerBranch * 1.2f * leafSkipRate);
             totalLeaves += tipBranchCount * tipLeavesPerBranch;
 
             if (totalLeaves == 0) return existing;
@@ -523,12 +523,12 @@ namespace SmartCreator.ProceduralTrees
             Random.InitState(seed + 7777);
             float tipY = trunkHeight;
             float tipRadius = trunkTipRadius * 2.5f;
-            float tipLen = Mathf.Max(0.2f, tipBranchLength * 0.7f);
+            float tipLen = Mathf.Max(0.2f, tipBranchLength * 1.5f);
             for (int b = 0; b < tipBranchCount; b++)
             {
                 float yaw = Random.Range(0f, 360f);
-                float pitch = Random.Range(-15f, 25f);
-                float roll = Random.Range(-5f, 5f);
+                float pitch = Random.Range(-5f, 5f);
+                float roll = Random.Range(-75f, -50f);
                 float lenScale = Random.Range(0.6f, 1.1f);
 
                 Quaternion rot = Quaternion.Euler(pitch, yaw, roll);
@@ -740,21 +740,20 @@ namespace SmartCreator.ProceduralTrees
             {
                 float tipY = trunkHeight;
                 float tipRadius = trunkTipRadius * 2.5f;
-                int tipBranchCount = Mathf.Max(3, branchesPerWhorl);
-                float tipLen = Mathf.Max(0.2f, tipBranchLength * 0.7f);
+                int tipBranchCount = Mathf.Max(6, branchesPerWhorl * 2);
+                float tipLen = Mathf.Max(0.2f, tipBranchLength * 1.5f);
 
                 Random.InitState(seed + 7777);
                 for (int b = 0; b < tipBranchCount; b++)
                 {
                     float yaw = Random.Range(0f, 360f);
-                    // 小さいpitch角で上向き（0=真横, 負=上向き）
-                    float pitch = Random.Range(-15f, 25f);
+                    float pitch = Random.Range(60f, 85f);
                     float roll = Random.Range(-5f, 5f);
                     float lenScale = Random.Range(0.6f, 1.1f);
 
                     Quaternion rot = SanitizeQuat(Quaternion.Euler(pitch, yaw, roll));
                     Vector3 pos = SanitizeVec(new Vector3(0, tipY, 0) + rot * (Vector3.right * tipRadius));
-                    Mesh branchMesh = BuildProceduralBranchMesh(tipLen * lenScale, branchDownwardCurve * 0.2f, branchThickness * 0.6f);
+                    Mesh branchMesh = BuildProceduralBranchMesh(tipLen * lenScale, branchDownwardCurve * 0.8f, branchThickness * 0.6f);
 
                     if (!IsMeshFinite(branchMesh))
                     {
@@ -829,15 +828,15 @@ namespace SmartCreator.ProceduralTrees
             {
                 float tipY = trunkHeight;
                 float tipRadius = trunkTipRadius * 2.5f;
-                int tipBranchCount = Mathf.Max(3, branchesPerWhorl);
-                float tipLen = Mathf.Max(0.2f, tipBranchLength * 0.7f);
-                int tipLeavesPerBranch = Mathf.RoundToInt(baseLeavesPerBranch * 0.5f);
+                int tipBranchCount = Mathf.Max(6, branchesPerWhorl * 2);
+                float tipLen = Mathf.Max(0.2f, tipBranchLength * 1.5f);
+                int tipLeavesPerBranch = Mathf.RoundToInt(baseLeavesPerBranch * 1.2f);
 
                 Random.InitState(seed + 7777);
                 for (int b = 0; b < tipBranchCount; b++)
                 {
                     float yaw = Random.Range(0f, 360f);
-                    float pitch = Random.Range(-15f, 25f);
+                    float pitch = Random.Range(60f, 85f);
                     float roll = Random.Range(-5f, 5f);
                     float lenScale = Random.Range(0.6f, 1.1f);
 
