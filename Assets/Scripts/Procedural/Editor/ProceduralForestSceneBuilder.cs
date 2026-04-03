@@ -52,9 +52,6 @@ namespace WoodSimulator
                 mainCam.transform.position = new Vector3(0f, 15f, -30f);
                 mainCam.transform.rotation = Quaternion.Euler(25f, 0f, 0f);
                 mainCam.farClipPlane = 300f;
-
-                // CameraController追加
-                var camCtrl = mainCam.gameObject.AddComponent<CameraController>();
             }
 
             // --- Directional Light調整 ---
@@ -83,7 +80,7 @@ namespace WoodSimulator
             manager.forestCenter = Vector3.zero;
             manager.forestSize = new Vector2(32f, 32f);
             manager.maxTreeCount = 300;
-            manager.treesPerFrame = 5;
+            manager.frameBudgetMs = 8f;
             manager.displayScale = 0.1f;
 
             // --- Canvas + UI ---

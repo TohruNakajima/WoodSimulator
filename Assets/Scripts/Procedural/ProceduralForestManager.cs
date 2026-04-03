@@ -38,8 +38,8 @@ namespace WoodSimulator
         public Material leafMaterial;
 
         [Header("Performance")]
-        [Tooltip("1フレームあたりGenerate()する本数")]
-        public int treesPerFrame = 5;
+        [Tooltip("1フレームあたりのGenerate()に使える時間バジェット（ミリ秒）")]
+        public float frameBudgetMs = 8f;
 
         [Header("Thinning")]
         [Tooltip("間伐フェードアウト時間（秒）")]
@@ -73,13 +73,11 @@ namespace WoodSimulator
 
         private void Start()
         {
-            Debug.Log("[ProceduralForestManager] Start() called.");
             if (growthDatabase == null || growthDatabase.Count == 0)
             {
                 Debug.LogError("[ProceduralForestManager] GrowthDatabase is missing or empty.");
                 return;
             }
-            Debug.Log($"[ProceduralForestManager] GrowthDatabase loaded: {growthDatabase.Count} stages, barkMat={barkMaterial?.name ?? "NULL"}, leafMat={leafMaterial?.name ?? "NULL"}");
 
             InitializeForest();
             SetStage(0);
@@ -120,7 +118,7 @@ namespace WoodSimulator
             // growthFactor昇順ソート（間伐時の選別用）
             allTrees.Sort((a, b) => a.growthFactor.CompareTo(b.growthFactor));
 
-            Debug.Log($"[ProceduralForestManager] Initialized {allTrees.Count} trees.");
+
         }
 
         /// <summary>
@@ -135,7 +133,6 @@ namespace WoodSimulator
             currentStageIndex = stageIndex;
 
             var data = growthDatabase.growthStages[currentStageIndex];
-            Debug.Log($"[ProceduralForestManager] SetStage({stageIndex}): age={data.age}, height={data.height}, diameter={data.diameter}, treeCount={data.treeCount}, activeTrees={GetActiveTreeCount()}");
             OnAgeChanged?.Invoke(currentStageIndex, data);
 
             // 間伐 or 復活の判定
@@ -172,15 +169,17 @@ namespace WoodSimulator
         }
 
         /// <summary>
-        /// 全アクティブ木をN本/フレームずつGenerate()更新するコルーチン。
+        /// 全アクティブ木をフレーム時間バジェット内でGenerate()更新するコルーチン。
+        /// 1本更新するたびに経過時間をチェックし、バジェット超過でyieldする。
         /// </summary>
         private IEnumerator UpdateTreesGradually(GrowthData data)
         {
             var activeList = GetActiveTrees();
             updateTotal = activeList.Count;
             updateProgress = 0;
-            Debug.Log($"[ProceduralForestManager] UpdateTreesGradually: {updateTotal} trees to update for age={data.age}");
-            var sw = System.Diagnostics.Stopwatch.StartNew();
+
+            var sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
 
             for (int i = 0; i < activeList.Count; i++)
             {
@@ -191,12 +190,13 @@ namespace WoodSimulator
                 updateProgress = i + 1;
                 OnUpdateProgress?.Invoke(updateProgress, updateTotal);
 
-                if ((i + 1) % treesPerFrame == 0)
+                if (sw.Elapsed.TotalMilliseconds >= frameBudgetMs)
+                {
                     yield return null;
+                    sw.Restart();
+                }
             }
 
-            sw.Stop();
-            Debug.Log($"[ProceduralForestManager] UpdateTreesGradually complete: {updateTotal} trees in {sw.ElapsedMilliseconds}ms");
             updateProgress = updateTotal;
             OnUpdateProgress?.Invoke(updateProgress, updateTotal);
             updateCoroutine = null;
@@ -222,8 +222,6 @@ namespace WoodSimulator
                 removed++;
             }
 
-            if (removed > 0)
-                Debug.Log($"[ProceduralForestManager] Thinned {removed} trees at age {currentAge}.");
         }
 
         /// <summary>
@@ -256,8 +254,6 @@ namespace WoodSimulator
                 restored++;
             }
 
-            if (restored > 0)
-                Debug.Log($"[ProceduralForestManager] Restored {restored} trees (back to age {currentAge}).");
         }
 
         /// <summary>

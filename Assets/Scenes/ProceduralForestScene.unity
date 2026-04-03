@@ -1100,8 +1100,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WoodSimulator.CameraController
   targetPosition: {x: 0, y: 0, z: 0}
-  initialHeight: 75
-  initialDistance: 75
   initialRotationY: 0
   zoomSpeed: 10
   minDistance: 50
@@ -1109,6 +1107,11 @@ MonoBehaviour:
   panSpeed: 0.5
   rotationSpeed: 100
   minHeight: 10
+  initialHeight: 0
+  initialDistance: 0
+  currentDistance: 0
+  currentRotationY: 0
+  currentTargetPosition: {x: 0, y: 0, z: 0}
 --- !u!81 &730624130
 AudioListener:
   m_ObjectHideFlags: 0
@@ -1176,13 +1179,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 730624128}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: 0, y: 63.68, z: -49.12}
+  m_LocalRotation: {x: 0.2767277, y: 0, z: 0, w: 0.9609484}
+  m_LocalPosition: {x: 0, y: 34.4, z: -36.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 32.13, y: 0, z: 0}
 --- !u!114 &730624133
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2076,7 +2079,7 @@ MonoBehaviour:
   baseSeed: 12345
   barkMaterial: {fileID: 2100000, guid: 78871b45c6a19554f8c2596b3e88def6, type: 2}
   leafMaterial: {fileID: 2100000, guid: bf23d721e7441d0479fdb2e13baef4cf, type: 2}
-  treesPerFrame: 5
+  frameBudgetMs: 8
   thinningFadeDuration: 1
   displayScale: 0.1
 --- !u!4 &2139264811

@@ -88,14 +88,12 @@ namespace SmartCreator.ProceduralTrees
 #if UNITY_EDITOR
             if (PrefabUtility.IsPartOfPrefabAsset(gameObject)) return;
 #endif
-            // Only destroy if NOT called from OnValidate/import (safe contexts only)
             if (!Application.isPlaying)
             {
 #if UNITY_EDITOR
                 if (UnityEditor.EditorApplication.isUpdating || UnityEditor.EditorApplication.isCompiling)
-                    return; // Avoid destruction during import/compiling
+                    return;
 #endif
-                // Remove children (safe in user-initiated, NOT in OnValidate)
                 for (int i = transform.childCount - 1; i >= 0; i--)
                 {
 #if UNITY_EDITOR
@@ -103,12 +101,6 @@ namespace SmartCreator.ProceduralTrees
 #endif
                     DestroyImmediate(transform.GetChild(i).gameObject);
                 }
-            }
-            else
-            {
-                // Runtime: use Destroy (non-immediate, only for dynamic builds)
-                for (int i = transform.childCount - 1; i >= 0; i--)
-                    Destroy(transform.GetChild(i).gameObject);
             }
 
             if (addLODGroup && GetComponent<LODGroup>() == null)
@@ -122,9 +114,34 @@ namespace SmartCreator.ProceduralTrees
             if (!IsMeshFinite(branchesMesh)) branchesMesh = DummySafeMesh("BranchesFallback");
             if (!IsMeshFinite(leavesMesh)) leavesMesh = DummySafeMesh("LeavesFallback");
 
-            CreatePart("Trunk", trunkMesh, barkMaterial);
-            CreatePart("Branches", branchesMesh, barkMaterial);
-            CreatePart("Leaves", leavesMesh, leafMaterial);
+            if (Application.isPlaying)
+            {
+                // ランタイム: 既存の子GameObjectを使い回してメッシュだけ差し替え
+                UpdateOrCreatePart("Trunk", trunkMesh, barkMaterial);
+                UpdateOrCreatePart("Branches", branchesMesh, barkMaterial);
+                UpdateOrCreatePart("Leaves", leavesMesh, leafMaterial);
+            }
+            else
+            {
+                CreatePart("Trunk", trunkMesh, barkMaterial);
+                CreatePart("Branches", branchesMesh, barkMaterial);
+                CreatePart("Leaves", leavesMesh, leafMaterial);
+            }
+        }
+
+        void UpdateOrCreatePart(string name, Mesh mesh, Material mat)
+        {
+            if (mesh == null || mesh.vertexCount < 3) return;
+            var child = transform.Find(name);
+            if (child != null)
+            {
+                child.GetComponent<MeshFilter>().sharedMesh = mesh;
+                child.GetComponent<MeshRenderer>().sharedMaterial = mat;
+            }
+            else
+            {
+                CreatePart(name, mesh, mat);
+            }
         }
 
         void CreatePart(string name, Mesh mesh, Material mat)
