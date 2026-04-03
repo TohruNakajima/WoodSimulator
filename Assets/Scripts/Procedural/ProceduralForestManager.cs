@@ -21,6 +21,12 @@ namespace WoodSimulator
         [Tooltip("配置エリアの中心")]
         public Vector3 forestCenter = Vector3.zero;
 
+        [Tooltip("Terrain上に配置する場合にセット（Y座標を地形に合わせる）")]
+        public Terrain terrain;
+
+        [Tooltip("Terrain上でこの高さ(m)以下には木を配置しない（川底除外）")]
+        public float minTerrainHeight = 5f;
+
         [Tooltip("配置エリアのサイズ (X, Z)")]
         public Vector2 forestSize = new Vector2(32f, 32f);
 
@@ -101,10 +107,19 @@ namespace WoodSimulator
                 int treeSeed = baseSeed + i;
                 var instance = new ProceduralTreeInstance(treeSeed, points[i]);
 
-                // GameObjectを生成
+                // GameObjectを生成（Terrainがあれば高さを合わせる、川底除外）
+                Vector3 pos = instance.position;
+                if (terrain != null)
+                {
+                    float terrainY = terrain.SampleHeight(pos) + terrain.transform.position.y;
+                    if (terrainY < minTerrainHeight)
+                        continue; // 川底・低地をスキップ
+                    pos.y = terrainY;
+                }
+
                 var go = new GameObject("CedarTree");
                 go.transform.SetParent(treeContainer, false);
-                go.transform.position = instance.position;
+                go.transform.position = pos;
                 go.transform.rotation = Quaternion.Euler(0f, instance.rotationY, 0f);
 
                 var gen = go.AddComponent<PineTreeGenerator>();
