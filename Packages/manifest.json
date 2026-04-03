@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "jp.notargs.unity-natural-mcp": "https://github.com/nakagimadevelop002-glitch/UnityNaturalMCP.git?path=/UnityNaturalMCPServer",
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
     "com.unity.collab-proxy": "2.11.4",
     "com.unity.feature.development": "1.0.2",

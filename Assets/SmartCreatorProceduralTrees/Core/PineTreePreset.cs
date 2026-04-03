@@ -480,6 +480,7 @@ namespace SmartCreator.ProceduralTrees
             List<Vector3> verts = new();
             List<Vector3> norms = new();
             List<int> tris = new();
+            List<Vector2> uvs = new();
 
             float curveMult = downwardCurveAmount * branchLen * 0.28f;
             float noiseMult = thickness * 0.31f;
@@ -506,6 +507,7 @@ namespace SmartCreator.ProceduralTrees
                     ));
                     verts.Add(p);
                     norms.Add(Vector3.right);
+                    uvs.Add(new Vector2(i / (float)sides, t));
                 }
             }
             int ring = sides + 1;
@@ -527,6 +529,7 @@ namespace SmartCreator.ProceduralTrees
             mesh.SetVertices(verts);
             mesh.SetNormals(norms);
             mesh.SetTriangles(tris, 0);
+            mesh.SetUVs(0, uvs);
             mesh.RecalculateBounds();
             return mesh;
         }

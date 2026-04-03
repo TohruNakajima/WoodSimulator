@@ -235,6 +235,13 @@
       },
       "url": "https://packages.unity.com"
     },
+    "jp.notargs.unity-natural-mcp": {
+      "version": "https://github.com/nakagimadevelop002-glitch/UnityNaturalMCP.git?path=/UnityNaturalMCPServer",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "adabd7b008870afb3e9c85f4d52b9a1c3a41fc51"
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,
