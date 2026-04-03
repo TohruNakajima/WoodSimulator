@@ -170,6 +170,34 @@ namespace WoodSimulator
             var fpsCounter = canvasGO.AddComponent<FPSCounter>();
             fpsCounter.fpsText = fpsText;
 
+            // --- カメラ操作UI（右下） ---
+            var camPanel = CreatePanel(canvasGO.transform, "Panel_Camera",
+                new Vector2(1f, 0f), new Vector2(1f, 0f), new Vector2(-180f, 10f), new Vector2(170f, 170f));
+
+            var camUI = canvasGO.AddComponent<CameraControlUI>();
+            var mainCam = Camera.main;
+            if (mainCam != null)
+                camUI.flyCamera = mainCam.GetComponent<SimpleFlyCamera>();
+
+            // 移動ボタン（十字配置）
+            camUI.forwardButton = CreateButton(camPanel.transform, "Btn_Fwd", "▲", new Vector2(60, 120), new Vector2(40, 35));
+            camUI.backButton    = CreateButton(camPanel.transform, "Btn_Back", "▼", new Vector2(60, 45), new Vector2(40, 35));
+            camUI.leftButton    = CreateButton(camPanel.transform, "Btn_Left", "◀", new Vector2(15, 82), new Vector2(40, 35));
+            camUI.rightButton   = CreateButton(camPanel.transform, "Btn_Right", "▶", new Vector2(105, 82), new Vector2(40, 35));
+            camUI.upButton      = CreateButton(camPanel.transform, "Btn_Up", "↑", new Vector2(60, 82), new Vector2(40, 35));
+
+            // 上下ボタン（左端）
+            camUI.downButton    = CreateButton(camPanel.transform, "Btn_Down", "↓", new Vector2(15, 45), new Vector2(40, 35));
+
+            // 回転ボタン（右端）
+            camUI.rotLeftButton  = CreateButton(camPanel.transform, "Btn_RotL", "↶", new Vector2(15, 120), new Vector2(40, 35));
+            camUI.rotRightButton = CreateButton(camPanel.transform, "Btn_RotR", "↷", new Vector2(105, 120), new Vector2(40, 35));
+            camUI.rotUpButton    = CreateButton(camPanel.transform, "Btn_RotU", "⤒", new Vector2(105, 45), new Vector2(40, 35));
+            camUI.rotDownButton  = CreateButton(camPanel.transform, "Btn_RotD", "⤓", new Vector2(15, 10), new Vector2(40, 35));
+
+            // ラベル
+            CreateText(camPanel.transform, "Txt_CamLabel", "Camera", new Vector2(55, -5), new Vector2(60, 20));
+
             // --- EventSystem ---
             if (Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
             {

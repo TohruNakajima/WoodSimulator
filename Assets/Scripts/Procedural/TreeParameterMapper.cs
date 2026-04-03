@@ -31,13 +31,15 @@ namespace WoodSimulator
             gen.baseBranchLength = Mathf.Lerp(1.5f, 4.5f, hNorm) * growthFactor;
             gen.tipBranchLength = Mathf.Lerp(0.3f, 1.5f, hNorm) * growthFactor;
             gen.branchThickness = Mathf.Lerp(0.03f, 0.10f, dNorm) * thicknessFactor;
-            gen.leafCardLength = Mathf.Lerp(0.3f, 1.0f, hNorm) * growthFactor;
-            gen.leafCardWidth = Mathf.Lerp(0.10f, 0.30f, hNorm) * growthFactor;
+            // 葉カードサイズ: growthFactorの影響を弱める（若木でも葉はしっかり茂る）
+            float leafFactor = Mathf.Lerp(0.8f, 1.0f, growthFactor);
+            gen.leafCardLength = Mathf.Lerp(0.6f, 1.0f, hNorm) * leafFactor;
+            gen.leafCardWidth = Mathf.Lerp(0.22f, 0.35f, hNorm) * leafFactor;
 
-            // 構造系パラメータ（growthFactor不要、整数丸め）
-            gen.whorlCount = Mathf.RoundToInt(Mathf.Lerp(10f, 28f, hNorm));
-            gen.branchesPerWhorl = Mathf.RoundToInt(Mathf.Lerp(4f, 10f, hNorm));
-            gen.baseLeavesPerBranch = Mathf.RoundToInt(Mathf.Lerp(32f, 64f, hNorm));
+            // 構造系パラメータ（若木でも枝・葉を密に）
+            gen.whorlCount = Mathf.RoundToInt(Mathf.Lerp(16f, 30f, hNorm));
+            gen.branchesPerWhorl = Mathf.RoundToInt(Mathf.Lerp(8f, 12f, hNorm));
+            gen.baseLeavesPerBranch = Mathf.RoundToInt(Mathf.Lerp(56f, 80f, hNorm));
 
             // 角度系（成長に応じて変化、growthFactor不要）
             gen.branchDownwardAngle = Mathf.Lerp(30f, 55f, hNorm);

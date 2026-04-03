@@ -3,14 +3,19 @@ using UnityEngine;
 namespace WoodSimulator
 {
     /// <summary>
-    /// WASD+マウスによるシンプルなフライカメラ。
-    /// LODテストシーンでの移動用。
+    /// WASD+マウスによるフライカメラ。
     /// </summary>
     public class SimpleFlyCamera : MonoBehaviour
     {
+        [Header("Movement")]
         public float moveSpeed = 20f;
         public float fastMultiplier = 3f;
+
+        [Header("Mouse Look")]
         public float lookSpeed = 2f;
+
+        // UIボタンからの入力
+        private Vector3 uiMoveDirection;
 
         private float rotX;
         private float rotY;
@@ -44,7 +49,39 @@ namespace WoodSimulator
             if (Input.GetKey(KeyCode.E)) move += Vector3.up;
             if (Input.GetKey(KeyCode.Q)) move -= Vector3.up;
 
-            transform.position += move.normalized * speed * Time.deltaTime;
+            // UIボタンからの移動を加算
+            if (uiMoveDirection.sqrMagnitude > 0f)
+            {
+                move += transform.forward * uiMoveDirection.z;
+                move += transform.right * uiMoveDirection.x;
+                move += Vector3.up * uiMoveDirection.y;
+            }
+
+            if (move.sqrMagnitude > 0f)
+                transform.position += move.normalized * speed * Time.deltaTime;
+        }
+
+        /// <summary>
+        /// UIボタンから呼ばれる移動方向設定。
+        /// </summary>
+        public void SetUIMove(Vector3 direction)
+        {
+            uiMoveDirection = direction;
+        }
+
+        /// <summary>
+        /// UIボタンから呼ばれる回転。
+        /// </summary>
+        public void RotateYaw(float amount)
+        {
+            rotX += amount;
+            transform.rotation = Quaternion.Euler(rotY, rotX, 0f);
+        }
+
+        public void RotatePitch(float amount)
+        {
+            rotY = Mathf.Clamp(rotY + amount, -89f, 89f);
+            transform.rotation = Quaternion.Euler(rotY, rotX, 0f);
         }
     }
 }
