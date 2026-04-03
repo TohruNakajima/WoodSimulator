@@ -37,7 +37,7 @@ namespace WoodSimulator
             // 構造系パラメータ（growthFactor不要、整数丸め）
             gen.whorlCount = Mathf.RoundToInt(Mathf.Lerp(10f, 28f, hNorm));
             gen.branchesPerWhorl = Mathf.RoundToInt(Mathf.Lerp(4f, 10f, hNorm));
-            gen.baseLeavesPerBranch = Mathf.RoundToInt(Mathf.Lerp(20f, 48f, hNorm));
+            gen.baseLeavesPerBranch = Mathf.RoundToInt(Mathf.Lerp(32f, 64f, hNorm));
 
             // 角度系（成長に応じて変化、growthFactor不要）
             gen.branchDownwardAngle = Mathf.Lerp(30f, 55f, hNorm);
